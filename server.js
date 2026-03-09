@@ -281,6 +281,7 @@ app.post("/api/contact", (req, res) => {
 // Sitemap
 app.get("/sitemap.xml", (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
+  const toW3C = (d) => { try { const dt = new Date(d); return isNaN(dt) ? today : dt.toISOString().slice(0, 10); } catch { return today; } };
   const corePages = [
     { path: "/", priority: "1.0", changefreq: "daily" },
     { path: "/tools", priority: "0.9", changefreq: "weekly" },
@@ -319,13 +320,13 @@ app.get("/sitemap.xml", (req, res) => {
   enPosts.forEach(p => {
     const enUrl = BASE_URL + "/blog/" + p.slug;
     const viUrl = BASE_URL + "/vi/blog/" + p.slug;
-    xml += `  <url><loc>${enUrl}</loc><lastmod>${p.date || today}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
+    xml += `  <url><loc>${enUrl}</loc><lastmod>${toW3C(p.date)}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
   });
 
   viPosts.forEach(p => {
     const viUrl = BASE_URL + "/vi/blog/" + p.slug;
     const enUrl = BASE_URL + "/blog/" + p.slug;
-    xml += `  <url><loc>${viUrl}</loc><lastmod>${p.date || today}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
+    xml += `  <url><loc>${viUrl}</loc><lastmod>${toW3C(p.date)}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
   });
 
   xml += "</urlset>";
