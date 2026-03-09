@@ -1,0 +1,144 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="hero">
+    <h1><%= t.heroTitle %></h1>
+    <p><%= t.heroDesc %></p>
+    <div class="platforms-bar">
+      <span>TikTok</span>
+      <span>YouTube</span>
+      <span>Facebook</span>
+      <span>Instagram</span>
+      <span>Bilibili</span>
+      <span>Twitter</span>
+    </div>
+  </div>
+
+  <div class="input-wrap">
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="<%= t.inputPlaceholder %>" autocomplete="off" />
+      <button class="btn" id="fetchBtn" onclick="fetchVideoInfo()"><%= t.btnGetVideo %></button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="result-box" id="resultBox">
+    <img class="result-thumb" id="thumbnail" src="" alt="Video thumbnail" />
+    <div class="result-body">
+      <div class="result-title" id="videoTitle"></div>
+      <div class="result-meta" id="videoMeta"></div>
+      <div class="formats-label"><%= t.quality %>:</div>
+      <div class="formats-list" id="formatsList"></div>
+      <button class="btn" id="downloadBtn" onclick="downloadVideo()"><%= t.btnDownload %></button>
+    </div>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.howItWorks %></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3><%= t.step1Title %></h3>
+        <p><%= t.step1Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3><%= t.step2Title %></h3>
+        <p><%= t.step2Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3><%= t.step3Title %></h3>
+        <p><%= t.step3Desc %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.supportedPlatforms %></h2>
+    <div class="tools-grid" style="margin-top:20px">
+      <a class="tool-card" href="<%= langPrefix %>/tiktok-downloader">
+        <h3><%= t.tiktokTitle %></h3>
+        <p><%= t.tiktokDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/youtube-downloader">
+        <h3><%= t.youtubeTitle %></h3>
+        <p><%= t.youtubeDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/instagram-downloader">
+        <h3><%= t.instagramTitle %></h3>
+        <p><%= t.instagramDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/facebook-video-downloader">
+        <h3><%= t.facebookTitle %></h3>
+        <p><%= t.facebookDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/bilibili-video-downloader">
+        <h3><%= t.bilibiliTitle %></h3>
+        <p><%= t.bilibiliDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/twitter-video-downloader">
+        <h3><%= t.twitterTitle %></h3>
+        <p><%= t.twitterDesc %></p>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.utilityTools %></h2>
+    <div class="tools-grid" style="margin-top:20px">
+      <a class="tool-card" href="<%= langPrefix %>/youtube-thumbnail-downloader">
+        <h3><%= t.thumbnailTitle %></h3>
+        <p><%= t.thumbnailDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/mp4-to-mp3">
+        <h3><%= t.mp4ToMp3Title %></h3>
+        <p><%= t.mp4ToMp3Desc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/video-to-audio">
+        <h3><%= t.videoToAudioTitle %></h3>
+        <p><%= t.videoToAudioDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/subtitle-downloader">
+        <h3><%= t.subtitleTitle %></h3>
+        <p><%= t.subtitleDesc %></p>
+      </a>
+      <a class="tool-card" href="<%= langPrefix %>/video-trimmer">
+        <h3><%= t.trimmerTitle %></h3>
+        <p><%= t.trimmerDesc %></p>
+      </a>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <a href="<%= langPrefix %>/tools" class="btn" style="display:inline-block"><%= t.viewAllTools %> &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<% if (typeof latestPosts !== 'undefined' && latestPosts.length > 0) { %>
+<div class="section">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.latestArticles %></h2>
+    <div class="blog-grid" style="margin-top:20px">
+      <% latestPosts.forEach(function(p) { %>
+      <a href="<%= langPrefix %>/blog/<%= p.slug %>" class="blog-card">
+        <h3><%= p.title %></h3>
+        <p><%= p.excerpt %></p>
+        <span class="blog-date"><%= p.date %></span>
+      </a>
+      <% }); %>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <a href="<%= langPrefix %>/blog" class="btn" style="display:inline-block"><%= t.readAllArticles %> &rarr;</a>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<%- include('partials/footer') %>

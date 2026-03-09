@@ -1,0 +1,16 @@
+<nav class="nav">
+  <div class="container">
+    <a href="<%= langPrefix %>/" class="nav-logo">SnapClip</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('open');this.classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <% var isToolPage = currentPath === '/tools' || /downloader|mp4-to-mp3|video-to-audio|video-trimmer/.test(currentPath); %>
+    <div class="nav-links">
+      <a href="<%= langPrefix %>/tools"<% if (isToolPage) { %> class="active"<% } %>><%= t.navTools %></a>
+      <a href="<%= langPrefix %>/blog"<% if (currentPath.startsWith('/blog')) { %> class="active"<% } %>><%= t.navBlog %></a>
+      <a href="<%= langPrefix %>/faq"<% if (currentPath === '/faq') { %> class="active"<% } %>><%= t.navFaq %></a>
+      <a href="<%= langPrefix %>/contact"<% if (currentPath === '/contact') { %> class="active"<% } %>><%= t.navContact %></a>
+      <a href="<%= altLangPrefix || '/' %><%= altLangPrefix ? currentPath : '' %>" class="lang-switch"><%= t.otherLangName %></a>
+    </div>
+  </div>
+</nav>

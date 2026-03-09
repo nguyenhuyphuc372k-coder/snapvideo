@@ -1,0 +1,7 @@
+node_modules/
+downloads/
+uploads/
+contact-messages/
+*.bak
+.env
+generate-icons.js

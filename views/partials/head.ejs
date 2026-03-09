@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' ? title : t.siteName %></title>
+  <meta name="description" content="<%= typeof description !== 'undefined' ? description : t.siteDesc %>" />
+  <% if (typeof canonical !== 'undefined' && canonical) { %><link rel="canonical" href="<%= canonical %>" /><% } %>
+  <link rel="alternate" hreflang="en" href="<%= BASE_URL %><%= currentPath %>" />
+  <link rel="alternate" hreflang="vi" href="<%= BASE_URL %>/vi<%= currentPath %>" />
+  <link rel="alternate" hreflang="x-default" href="<%= BASE_URL %><%= currentPath %>" />
+  <% if (typeof noindex !== 'undefined' && noindex) { %><meta name="robots" content="noindex, nofollow" /><% } else { %><meta name="robots" content="index, follow" /><% } %>
+  <meta property="og:title" content="<%= typeof title !== 'undefined' ? title : t.siteName %>" />
+  <meta property="og:description" content="<%= typeof description !== 'undefined' ? description : t.siteDesc %>" />
+  <meta property="og:type" content="website" />
+  <% if (typeof canonical !== 'undefined' && canonical) { %><meta property="og:url" content="<%= canonical %>" /><% } %>
+  <meta property="og:site_name" content="SnapClip" />
+  <meta property="og:locale" content="<%= lang === 'vi' ? 'vi_VN' : 'en_US' %>" />
+  <meta property="og:locale:alternate" content="<%= lang === 'vi' ? 'en_US' : 'vi_VN' %>" />
+  <meta property="og:image" content="<%= BASE_URL %>/images/og-default.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="<%= typeof title !== 'undefined' ? title : t.siteName %>" />
+  <meta name="twitter:description" content="<%= typeof description !== 'undefined' ? description : t.siteDesc %>" />
+  <meta name="twitter:image" content="<%= BASE_URL %>/images/og-default.png" />
+  <link rel="icon" type="image/svg+xml" href="/images/icon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/images/icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/images/icon-512x512.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#111111" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script>window.T = <%- JSON.stringify({statusFetching:t.statusFetching,statusProcessing:t.statusProcessing,statusError:t.statusError,statusDownloadStarted:t.statusDownloadStarted,statusConnectionError:t.statusConnectionError,statusPleaseUrl:t.statusPleaseUrl,statusSelectFile:t.statusSelectFile,statusUploadVideo:t.statusUploadVideo,statusSetEndTime:t.statusSetEndTime,quality:t.quality,btnDownload:t.btnDownload,btnGetVideo:t.btnGetVideo,noSubsFound:t.noSubsFound,downloadSrt:t.downloadSrt}) %></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"SnapClip","url":"<%= BASE_URL %>","potentialAction":{"@type":"SearchAction","target":"<%= BASE_URL %>/tools","query-input":"required name=search_term_string"}}</script>
+  <% if (typeof faqSchema !== 'undefined' && faqSchema && faqSchema.length) { %><script type="application/ld+json"><%- JSON.stringify({"@context":"https://schema.org","@type":"FAQPage","mainEntity":faqSchema.map(function(f){return{"@type":"Question","name":f.q,"acceptedAnswer":{"@type":"Answer","text":f.a}}})}) %></script><% } %>
+</head>
+<body>

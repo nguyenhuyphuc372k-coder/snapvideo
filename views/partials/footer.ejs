@@ -1,0 +1,33 @@
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-links">
+        <div class="footer-group">
+          <a href="<%= langPrefix %>/tools"><%= t.navTools %></a>
+          <a href="<%= langPrefix %>/blog"><%= t.navBlog %></a>
+          <a href="<%= langPrefix %>/faq"><%= t.navFaq %></a>
+          <a href="<%= langPrefix %>/contact"><%= t.navContact %></a>
+        </div>
+        <div class="footer-group">
+          <a href="<%= langPrefix %>/privacy-policy"><%= t.privacyPolicy %></a>
+          <a href="<%= langPrefix %>/terms-of-service"><%= t.termsOfService %></a>
+          <a href="<%= langPrefix %>/disclaimer"><%= t.disclaimer %></a>
+          <a href="<%= langPrefix %>/dmca"><%= t.dmca %></a>
+        </div>
+      </div>
+      <div class="footer-copy">&copy; <%= new Date().getFullYear() %> SnapClip. <%= t.footerCopy %></div>
+    </div>
+  </div>
+</footer>
+<script src="/js/app.js"></script>
+<script>
+document.addEventListener('click',function(e){
+  var nav=document.querySelector('.nav-links');
+  var btn=document.getElementById('navToggle');
+  if(nav&&btn&&nav.classList.contains('open')&&!nav.contains(e.target)&&!btn.contains(e.target)){
+    nav.classList.remove('open');btn.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

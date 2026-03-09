@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /downloads/
+Disallow: /uploads/
+
+Sitemap: https://snapclip.pro/sitemap.xml

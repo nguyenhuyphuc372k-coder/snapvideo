@@ -1,0 +1,63 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container">
+  <div class="page-header">
+    <h1><%= t.allTools %></h1>
+    <p><%= t.allToolsDesc %></p>
+  </div>
+
+  <h2><%= t.videoDownloaders %></h2>
+  <div class="tools-grid" style="margin-top:12px">
+    <a class="tool-card" href="<%= langPrefix %>/tiktok-downloader">
+      <h3><%= t.tiktokTitle %></h3>
+      <p><%= t.tiktokDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/youtube-downloader">
+      <h3><%= t.youtubeTitle %></h3>
+      <p><%= t.youtubeDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/instagram-downloader">
+      <h3><%= t.instagramTitle %></h3>
+      <p><%= t.instagramDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/facebook-video-downloader">
+      <h3><%= t.facebookTitle %></h3>
+      <p><%= t.facebookDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/bilibili-video-downloader">
+      <h3><%= t.bilibiliTitle %></h3>
+      <p><%= t.bilibiliDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/twitter-video-downloader">
+      <h3><%= t.twitterTitle %></h3>
+      <p><%= t.twitterDesc %></p>
+    </a>
+  </div>
+
+  <h2 style="margin-top:40px"><%= t.conversionTools %></h2>
+  <div class="tools-grid" style="margin-top:12px">
+    <a class="tool-card" href="<%= langPrefix %>/youtube-thumbnail-downloader">
+      <h3><%= t.thumbnailTitle %></h3>
+      <p><%= t.thumbnailDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/mp4-to-mp3">
+      <h3><%= t.mp4ToMp3Title %></h3>
+      <p><%= t.mp4ToMp3Desc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/video-to-audio">
+      <h3><%= t.videoToAudioTitle %></h3>
+      <p><%= t.videoToAudioDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/subtitle-downloader">
+      <h3><%= t.subtitleTitle %></h3>
+      <p><%= t.subtitleDesc %></p>
+    </a>
+    <a class="tool-card" href="<%= langPrefix %>/video-trimmer">
+      <h3><%= t.trimmerTitle %></h3>
+      <p><%= t.trimmerDesc %></p>
+    </a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

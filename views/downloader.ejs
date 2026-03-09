@@ -1,0 +1,94 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="page-header">
+    <h1><%= platform.title %></h1>
+    <p><%= platform.description %></p>
+  </div>
+
+  <div class="input-wrap">
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="<%= platform.placeholder %>" autocomplete="off" />
+      <button class="btn" id="fetchBtn" onclick="fetchVideoInfo()"><%= t.btnGetVideo %></button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="result-box" id="resultBox">
+    <img class="result-thumb" id="thumbnail" src="" alt="Video thumbnail" />
+    <div class="result-body">
+      <div class="result-title" id="videoTitle"></div>
+      <div class="result-meta" id="videoMeta"></div>
+      <div class="formats-label"><%= t.quality %>:</div>
+      <div class="formats-list" id="formatsList"></div>
+      <button class="btn" id="downloadBtn" onclick="downloadVideo()"><%= t.btnDownload %></button>
+    </div>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container">
+    <h2><%= t.howToDownload %> <%= platform.name %> <%= t.videos %></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3><%= t.copyTheLink %></h3>
+        <p><%= t.dlStep1Desc.replace('{platform}', platform.name) %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3><%= t.pasteAndFetch %></h3>
+        <p><%= t.dlStep2Desc.replace('{btn}', t.btnGetVideo) %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3><%= t.btnDownload %></h3>
+        <p><%= t.dlStep3Desc.replace('{btn}', t.btnDownload) %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+    <h2><%= t.features %></h2>
+    <div class="features-grid">
+      <% platform.features.forEach(f => { %>
+      <div class="feature">
+        <h3><%= f.title %></h3>
+        <p><%= f.desc %></p>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<% if (platform.faq && platform.faq.length) { %>
+<div class="section section-alt">
+  <div class="container-sm">
+    <h2><%= t.faqTitle %></h2>
+    <div class="faq-list">
+      <% platform.faq.forEach(item => { %>
+      <div class="faq-item">
+        <button class="faq-q"><%= item.q %></button>
+        <div class="faq-a"><%= item.a %></div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<div class="section">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.relatedTools %></h2>
+    <div class="tools-grid" style="margin-top:16px">
+      <a class="tool-card" href="<%= langPrefix %>/youtube-downloader"><h3><%= t.youtubeTitle %></h3><p><%= t.youtubeDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/mp4-to-mp3"><h3><%= t.mp4ToMp3Title %></h3><p><%= t.mp4ToMp3Desc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/video-trimmer"><h3><%= t.trimmerTitle %></h3><p><%= t.trimmerDesc %></p></a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,83 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="page-header">
+    <h1><%= t.trimmerPageTitle %></h1>
+    <p><%= t.trimmerPageDesc %></p>
+  </div>
+
+  <div class="upload-zone">
+    <input type="file" id="trimFileInput" accept="video/*" onchange="handleTrimUpload(this)" />
+    <p><%= t.uploadPrompt %></p>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="video-preview" id="videoPreview">
+    <video id="previewVideo" controls></video>
+    <div class="trim-controls">
+      <div class="form-group">
+        <label><%= t.startTime %></label>
+        <input type="text" id="trimStart" placeholder="00:00:00" value="00:00:00" />
+      </div>
+      <div class="form-group">
+        <label><%= t.endTime %></label>
+        <input type="text" id="trimEnd" placeholder="00:01:00" />
+      </div>
+      <button class="btn" id="trimBtn" onclick="trimVideo()"><%= t.btnTrim %></button>
+    </div>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container">
+    <h2><%= t.howItWorks %></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3><%= t.uploadVideo %></h3>
+        <p><%= t.trimStep1Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3><%= t.setTimeRange %></h3>
+        <p><%= t.trimStep2Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3><%= t.trimAndDownload %></h3>
+        <p><%= t.trimStep3Desc.replace('{btn}', t.btnTrim) %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container-sm">
+    <h2><%= t.faqTitle %></h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q"><%= t.trimFaq1Q %></button>
+        <div class="faq-a"><%= t.trimFaq1A %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.trimFaq2Q %></button>
+        <div class="faq-a"><%= t.trimFaq2A %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.trimFaq3Q %></button>
+        <div class="faq-a"><%= t.trimFaq3A %></div>
+      </div>
+    </div>
+  </div>
+
+<div class="section">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.relatedTools %></h2>
+    <div class="tools-grid" style="margin-top:16px">
+      <a class="tool-card" href="<%= langPrefix %>/youtube-downloader"><h3><%= t.youtubeTitle %></h3><p><%= t.youtubeDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/mp4-to-mp3"><h3><%= t.mp4ToMp3Title %></h3><p><%= t.mp4ToMp3Desc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/video-to-audio"><h3><%= t.videoToAudioTitle %></h3><p><%= t.videoToAudioDesc %></p></a>
+    </div>
+  </div>
+<%- include('partials/footer') %>

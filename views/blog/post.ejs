@@ -1,0 +1,37 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<script type="application/ld+json"><%- JSON.stringify({"@context":"https://schema.org","@type":"BlogPosting","headline":post.title,"description":post.excerpt,"datePublished":post.date,"dateModified":post.date,"author":{"@type":"Organization","name":"SnapClip"},"publisher":{"@type":"Organization","name":"SnapClip","url":BASE_URL},"mainEntityOfPage":{"@type":"WebPage","@id":BASE_URL+langPrefix+"/blog/"+post.slug},"inLanguage":lang==="vi"?"vi":"en"}) %></script>
+
+<div class="container-sm">
+  <nav aria-label="Breadcrumb" style="padding:48px 0 0;font-size:0.82rem;color:var(--text-lighter)">
+    <a href="<%= langPrefix %>/" style="color:var(--text-lighter)"><%= t.navHome || 'Home' %></a> &rsaquo;
+    <a href="<%= langPrefix %>/blog" style="color:var(--text-lighter)"><%= t.navBlog %></a> &rsaquo;
+    <span style="color:var(--text-light)"><%= post.title %></span>
+  </nav>
+  <script type="application/ld+json"><%- JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":t.navHome||"Home","item":BASE_URL+langPrefix+"/"},{"@type":"ListItem","position":2,"name":t.navBlog,"item":BASE_URL+langPrefix+"/blog"},{"@type":"ListItem","position":3,"name":post.title}]}) %></script>
+  <article>
+    <h1 style="font-size:1.6rem;margin-bottom:6px;margin-top:12px"><%= post.title %></h1>
+    <p style="font-size:0.82rem;color:var(--text-lighter);margin-bottom:32px"><%= post.date %></p>
+    <div class="blog-content">
+      <%- post.content %>
+    </div>
+  </article>
+
+  <% if (relatedPosts && relatedPosts.length > 0) { %>
+  <section style="margin-top:48px;padding-top:32px;border-top:1px solid var(--border)">
+    <h2 style="font-size:1.1rem;margin-bottom:20px"><%= t.moreArticles %></h2>
+    <div class="blog-grid">
+      <% relatedPosts.forEach(function(rp) { %>
+      <a href="<%= langPrefix %>/blog/<%= rp.slug %>" class="blog-card">
+        <h3><%= rp.title %></h3>
+        <p><%= rp.excerpt %></p>
+        <span class="blog-date"><%= rp.date %></span>
+      </a>
+      <% }); %>
+    </div>
+  </section>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

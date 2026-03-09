@@ -1,0 +1,119 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="page-header">
+    <h1><%= t.ytPageTitle %></h1>
+    <p><%= t.ytPageDesc %></p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-mode="mp4" onclick="switchTab('mp4')"><%= t.mp4Video %></button>
+    <button class="tab" data-mode="mp3" onclick="switchTab('mp3')"><%= t.mp3Audio %></button>
+  </div>
+
+  <div class="input-wrap">
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+      <button class="btn" id="fetchBtn" onclick="fetchVideoInfo()"><%= t.btnGetVideo %></button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="result-box" id="resultBox">
+    <img class="result-thumb" id="thumbnail" src="" alt="Video thumbnail" />
+    <div class="result-body">
+      <div class="result-title" id="videoTitle"></div>
+      <div class="result-meta" id="videoMeta"></div>
+      <div id="formatSection">
+        <div class="formats-label"><%= t.quality %>:</div>
+        <div class="formats-list" id="formatsList"></div>
+      </div>
+      <button class="btn" id="downloadBtn" onclick="downloadVideo()"><%= t.btnDownload %></button>
+    </div>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container">
+    <h2><%= t.howToDownloadYT %></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3><%= t.copyURL %></h3>
+        <p><%= t.ytStep1Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3><%= t.chooseFormat %></h3>
+        <p><%= t.ytStep2Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3><%= t.btnDownload %></h3>
+        <p><%= t.ytStep3Desc %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+    <h2><%= t.features %></h2>
+    <div class="features-grid">
+      <div class="feature">
+        <h3><%= t.ytFeatTitle1 %></h3>
+        <p><%= t.ytFeatDesc1 %></p>
+      </div>
+      <div class="feature">
+        <h3><%= t.ytFeatTitle2 %></h3>
+        <p><%= t.ytFeatDesc2 %></p>
+      </div>
+      <div class="feature">
+        <h3><%= t.ytFeatTitle3 %></h3>
+        <p><%= t.ytFeatDesc3 %></p>
+      </div>
+      <div class="feature">
+        <h3><%= t.ytFeatTitle4 %></h3>
+        <p><%= t.ytFeatDesc4 %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container-sm">
+    <h2><%= t.faqTitle %></h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q"><%= t.ytFaq1Q %></button>
+        <div class="faq-a"><%= t.ytFaq1A %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.ytFaq2Q %></button>
+        <div class="faq-a"><%= t.ytFaq2A.replace('{mp3Tab}', t.mp3Audio) %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.ytFaq3Q %></button>
+        <div class="faq-a"><%= t.ytFaq3A %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.ytFaq4Q %></button>
+        <div class="faq-a"><%= t.ytFaq4A %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.relatedTools %></h2>
+    <div class="tools-grid" style="margin-top:16px">
+      <a class="tool-card" href="<%= langPrefix %>/youtube-thumbnail-downloader"><h3><%= t.thumbnailTitle %></h3><p><%= t.thumbnailDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/subtitle-downloader"><h3><%= t.subtitleTitle %></h3><p><%= t.subtitleDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/mp4-to-mp3"><h3><%= t.mp4ToMp3Title %></h3><p><%= t.mp4ToMp3Desc %></p></a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

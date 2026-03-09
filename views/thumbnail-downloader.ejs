@@ -1,0 +1,71 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="page-header">
+    <h1><%= t.thumbPageTitle %></h1>
+    <p><%= t.thumbPageDesc %></p>
+  </div>
+
+  <div class="input-wrap">
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+      <button class="btn" id="fetchBtn" onclick="fetchThumbnail()"><%= t.btnGetThumbnail %></button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="thumb-preview" id="thumbPreview">
+    <img id="thumbImg" src="" alt="Video thumbnail" />
+    <a id="thumbDownload" href="" class="btn" download target="_blank"><%= t.btnDownloadThumbnail %></a>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container">
+    <h2><%= t.howToDownloadThumbs %></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3><%= t.copyURL %></h3>
+        <p><%= t.thumbStep1Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3><%= t.pasteAndFetch %></h3>
+        <p><%= t.thumbStep2Desc.replace('{btn}', t.btnGetThumbnail) %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3><%= t.btnDownload %></h3>
+        <p><%= t.thumbStep3Desc.replace('{btn}', t.btnDownloadThumbnail) %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container-sm">
+    <h2><%= t.faqTitle %></h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q"><%= t.thumbFaq1Q %></button>
+        <div class="faq-a"><%= t.thumbFaq1A %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.thumbFaq2Q %></button>
+        <div class="faq-a"><%= t.thumbFaq2A %></div>
+      </div>
+    </div>
+  </div>
+
+<div class="section">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.relatedTools %></h2>
+    <div class="tools-grid" style="margin-top:16px">
+      <a class="tool-card" href="<%= langPrefix %>/youtube-downloader"><h3><%= t.youtubeTitle %></h3><p><%= t.youtubeDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/subtitle-downloader"><h3><%= t.subtitleTitle %></h3><p><%= t.subtitleDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/mp4-to-mp3"><h3><%= t.mp4ToMp3Title %></h3><p><%= t.mp4ToMp3Desc %></p></a>
+    </div>
+  </div>
+<%- include('partials/footer') %>

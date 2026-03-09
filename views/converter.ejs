@@ -1,0 +1,82 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="page-header">
+    <h1><%= pageTitle %></h1>
+    <p><%= pageDesc %></p>
+  </div>
+
+  <h3 style="font-size:0.9rem;margin-bottom:4px"><%= t.fromUrl %></h3>
+  <p style="font-size:0.82rem;color:var(--text-lighter);margin-bottom:12px"><%= t.fromUrlDesc %></p>
+  <div class="input-wrap">
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+      <button class="btn" id="convertBtn" onclick="convertUrlToAudio()"><%= t.btnConvert %></button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div style="text-align:center;margin:28px 0;color:var(--text-lighter);font-size:0.85rem"><%= t.orUpload %></div>
+
+  <div class="upload-zone">
+    <input type="file" id="fileInput" accept="video/*,audio/*" />
+    <p><%= t.uploadPrompt %></p>
+  </div>
+  <div style="margin-top:12px;text-align:center">
+    <button class="btn" id="convertFileBtn" onclick="convertFile()"><%= t.btnConvertFile %></button>
+  </div>
+</div>
+
+<div class="section section-alt">
+  <div class="container">
+    <h2><%= t.howItWorks %></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3><%= t.converterStep1Title %></h3>
+        <p><%= t.converterStep1Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3><%= t.btnConvert %></h3>
+        <p><%= t.converterStep2Desc %></p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3><%= t.converterStep3Title %></h3>
+        <p><%= t.converterStep3Desc %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container-sm">
+    <h2><%= t.faqTitle %></h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q"><%= t.converterFaq1Q %></button>
+        <div class="faq-a"><%= t.converterFaq1A %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.converterFaq2Q %></button>
+        <div class="faq-a"><%= t.converterFaq2A %></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q"><%= t.converterFaq3Q %></button>
+        <div class="faq-a"><%= t.converterFaq3A %></div>
+      </div>
+    </div>
+  </div>
+
+<div class="section">
+  <div class="container">
+    <h2 style="text-align:center"><%= t.relatedTools %></h2>
+    <div class="tools-grid" style="margin-top:16px">
+      <a class="tool-card" href="<%= langPrefix %>/youtube-downloader"><h3><%= t.youtubeTitle %></h3><p><%= t.youtubeDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/video-trimmer"><h3><%= t.trimmerTitle %></h3><p><%= t.trimmerDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/subtitle-downloader"><h3><%= t.subtitleTitle %></h3><p><%= t.subtitleDesc %></p></a>
+    </div>
+  </div>
+<%- include('partials/footer') %>

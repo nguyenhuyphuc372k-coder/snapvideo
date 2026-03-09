@@ -1,0 +1,20 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="page-header">
+    <h1><%= t.faqPageTitle %></h1>
+    <p><%= t.faqPageDesc %></p>
+  </div>
+
+  <div class="faq-list">
+    <% t.faqItems.forEach(function(item) { %>
+    <div class="faq-item">
+      <button class="faq-q"><%= item.q %></button>
+      <div class="faq-a"><%- item.a %></div>
+    </div>
+    <% }); %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,66 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container-sm">
+  <div class="page-header">
+    <h1><%= t.contactTitle %></h1>
+    <p><%= t.contactDesc %></p>
+  </div>
+
+  <form id="contactForm" onsubmit="return handleContact(event)" style="margin-top:8px">
+    <div class="form-group">
+      <label for="contactName"><%= t.contactName %></label>
+      <input type="text" id="contactName" name="name" required />
+    </div>
+    <div class="form-group">
+      <label for="contactEmail"><%= t.contactEmail %></label>
+      <input type="email" id="contactEmail" name="email" required />
+    </div>
+    <div class="form-group">
+      <label for="contactSubject"><%= t.contactSubject %></label>
+      <select id="contactSubject" name="subject">
+        <option value="general"><%= t.subjectGeneral %></option>
+        <option value="bug"><%= t.subjectBug %></option>
+        <option value="feature"><%= t.subjectFeature %></option>
+        <option value="dmca"><%= t.subjectDmca %></option>
+        <option value="other"><%= t.subjectOther %></option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="contactMessage"><%= t.contactMessage %></label>
+      <textarea id="contactMessage" name="message" required></textarea>
+    </div>
+    <button class="btn" type="submit"><%= t.contactSend %></button>
+    <div class="status" id="status" style="margin-top:12px"></div>
+  </form>
+</div>
+
+<script>
+function handleContact(e) {
+  e.preventDefault();
+  var s = document.getElementById('status');
+  var form = e.target;
+  var btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  s.textContent = '';
+  s.className = 'status';
+  fetch('/api/contact', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      name: form.name.value,
+      email: form.email.value,
+      subject: form.subject.value,
+      message: form.message.value
+    })
+  }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.ok){ s.textContent = <%- JSON.stringify(t.contactSuccess) %>; form.reset(); }
+      else { s.textContent = data.error || 'Error'; s.className = 'status error'; }
+    }).catch(function(){ s.textContent = 'Connection error'; s.className = 'status error'; })
+    .finally(function(){ btn.disabled = false; });
+  return false;
+}
+</script>
+
+<%- include('partials/footer') %>

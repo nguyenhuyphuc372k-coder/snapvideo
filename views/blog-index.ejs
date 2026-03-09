@@ -1,0 +1,23 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container">
+  <div class="page-header">
+    <h1><%= t.blogTitle %></h1>
+    <p><%= t.blogDesc %></p>
+  </div>
+
+  <div class="blog-grid">
+    <% posts.forEach(post => { %>
+    <a class="blog-card" href="<%= langPrefix %>/blog/<%= post.slug %>">
+      <div class="blog-card-body">
+        <div class="date"><%= post.date %></div>
+        <h3><%= post.title %></h3>
+        <p><%= post.excerpt %></p>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
