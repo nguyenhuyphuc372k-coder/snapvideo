@@ -16,8 +16,10 @@
     <div class="blog-content">
       <%- post.content %>
     </div>
+    <%- include('../partials/ad-article') %>
   </article>
 
+  <%- include('../partials/ad-multiplex') %>
   <% if (relatedPosts && relatedPosts.length > 0) { %>
   <section style="margin-top:48px;padding-top:32px;border-top:1px solid var(--border)">
     <h2 style="font-size:1.1rem;margin-bottom:20px"><%= t.moreArticles %></h2>

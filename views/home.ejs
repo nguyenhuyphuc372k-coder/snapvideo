@@ -23,6 +23,7 @@
     <div class="status" id="status"></div>
   </div>
 
+  <%- include('partials/ad-display') %>
   <div class="result-box" id="resultBox">
     <img class="result-thumb" id="thumbnail" src="" alt="Video thumbnail" />
     <div class="result-body">
@@ -121,6 +122,7 @@
   </div>
 </div>
 
+<%- include('partials/ad-multiplex') %>
 <% if (typeof latestPosts !== 'undefined' && latestPosts.length > 0) { %>
 <div class="section">
   <div class="container">

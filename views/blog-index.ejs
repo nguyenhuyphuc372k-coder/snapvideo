@@ -7,6 +7,7 @@
     <p><%= t.blogDesc %></p>
   </div>
 
+  <%- include('partials/ad-display') %>
   <div class="blog-grid">
     <% posts.forEach(post => { %>
     <a class="blog-card" href="<%= langPrefix %>/blog/<%= post.slug %>">
