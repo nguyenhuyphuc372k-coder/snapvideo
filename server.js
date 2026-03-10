@@ -452,6 +452,9 @@ app.post("/api/download", (req, res) => {
     cleanupJob(jobId);
   });
 });
+
+// Download MP3 (audio extraction)
+app.post("/api/download-mp3", (req, res) => {
   const { url } = req.body;
   if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
   if (!isSupportedPlatform(url)) return res.status(400).json({ error: "Unsupported platform" });
