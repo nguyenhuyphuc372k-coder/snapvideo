@@ -72,6 +72,21 @@ function autoDeleteFile(filePath, ms = 600000) {
   setTimeout(() => { try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {} }, ms);
 }
 
+// Cookie file path for platforms that require cookies (e.g. Douyin)
+const { startCookieRefresh, COOKIES_FILE } = require("./cookie-refresh");
+
+function getCookieArgs(url) {
+  if (!fs.existsSync(COOKIES_FILE)) return [];
+  try {
+    const u = new URL(url);
+    const needsCookies = ["douyin.com", "xiaohongshu.com"];
+    if (needsCookies.some(h => u.hostname === h || u.hostname.endsWith("." + h))) {
+      return ["--cookies", COOKIES_FILE];
+    }
+  } catch {}
+  return [];
+}
+
 // ===================== DOWNLOAD PROGRESS TRACKING =====================
 const downloadJobs = new Map();
 
@@ -364,9 +379,15 @@ app.post("/api/info", (req, res) => {
   if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
   if (!isSupportedPlatform(url)) return res.status(400).json({ error: "Unsupported platform" });
 
-  execFile("yt-dlp", ["--no-warnings", "--dump-json", "--no-playlist", url],
+  execFile("yt-dlp", [...getCookieArgs(url), "--no-warnings", "--dump-json", "--no-playlist", url],
     { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
-    if (err) return res.status(500).json({ error: "Cannot fetch video info. Check URL." });
+    if (err) {
+      const msg = (err.stderr || "").toString();
+      if (msg.includes("cookies") || msg.includes("Fresh cookies")) {
+        return res.status(500).json({ error: "This platform requires authentication. Please try another video or platform." });
+      }
+      return res.status(500).json({ error: "Cannot fetch video info. Check URL." });
+    }
     try {
       const info = JSON.parse(stdout);
       let formats = (info.formats || [])
@@ -401,7 +422,7 @@ app.post("/api/download", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-o", outTpl, "--merge-output-format", "mp4"];
+  const args = ["--no-warnings", "--no-playlist", "--newline", ...getCookieArgs(url), "-o", outTpl, "--merge-output-format", "mp4"];
   if (formatId && formatId !== "best") {
     const safeFormat = String(formatId).replace(/[^a-zA-Z0-9+_-]/g, "");
     args.push("-f", `${safeFormat}+bestaudio/best`);
@@ -462,7 +483,7 @@ app.post("/api/download-mp3", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-o", outTpl, "-x", "--audio-format", "mp3", url];
+  const args = ["--no-warnings", "--no-playlist", "--newline", ...getCookieArgs(url), "-o", outTpl, "-x", "--audio-format", "mp3", url];
 
   downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
   res.json({ jobId });
@@ -512,7 +533,7 @@ app.post("/api/thumbnail", (req, res) => {
   const { url } = req.body;
   if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
 
-  execFile("yt-dlp", ["--no-warnings", "--dump-json", "--no-playlist", url],
+  execFile("yt-dlp", [...getCookieArgs(url), "--no-warnings", "--dump-json", "--no-playlist", url],
     { timeout: 20000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
     if (err) return res.status(500).json({ error: "Cannot fetch video info" });
     try {
@@ -529,7 +550,7 @@ app.post("/api/subtitles", (req, res) => {
   const { url } = req.body;
   if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
 
-  execFile("yt-dlp", ["--no-warnings", "--dump-json", "--no-playlist", url],
+  execFile("yt-dlp", [...getCookieArgs(url), "--no-warnings", "--dump-json", "--no-playlist", url],
     { timeout: 20000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
     if (err) return res.status(500).json({ error: "Cannot fetch video info" });
     try {
@@ -557,7 +578,7 @@ app.get("/api/subtitle-file", (req, res) => {
 
   const fileId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, fileId);
-  const args = ["--no-warnings", "--no-playlist", "--write-sub", "--write-auto-sub",
+  const args = ["--no-warnings", "--no-playlist", ...getCookieArgs(url), "--write-sub", "--write-auto-sub",
     "--sub-lang", lang, "--sub-format", "srt", "--skip-download", "-o", outTpl, url];
 
   execFile("yt-dlp", args, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, (err) => {
@@ -637,4 +658,5 @@ app.use((req, res) => {
 // ===================== START =====================
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  startCookieRefresh();
 });

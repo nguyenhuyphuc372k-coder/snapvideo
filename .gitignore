@@ -2,6 +2,7 @@ node_modules/
 downloads/
 uploads/
 contact-messages/
+cookies.txt
 *.bak
 .env
 generate-icons.js
