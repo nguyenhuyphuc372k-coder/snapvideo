@@ -7,7 +7,7 @@ module.exports = {
     otherLangName: "Tiếng Việt",
     siteName: "SnapClip",
     siteTagline: "Download Videos Without Watermark",
-    siteDesc: "Free online tool to download videos from TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter without watermark.",
+    siteDesc: "Free online tool to download videos from TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin without watermark.",
     // Nav
     navTools: "Tools",
     navBlog: "Blog",
@@ -22,7 +22,7 @@ module.exports = {
     btnDownload: "Download",
     howItWorks: "How It Works",
     step1Title: "Copy Link",
-    step1Desc: "Copy the video link from TikTok, YouTube, Facebook, Instagram, Bilibili or Twitter.",
+    step1Desc: "Copy the video link from TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu or Douyin.",
     step2Title: "Paste & Fetch",
     step2Desc: 'Paste the link above and click "Get Video" to fetch available formats.',
     step3Title: "Download",
@@ -52,6 +52,10 @@ module.exports = {
     bilibiliDesc: "Save Bilibili videos to your device.",
     twitterTitle: "Twitter/X Downloader",
     twitterDesc: "Download videos from Twitter/X posts.",
+    xiaohongshuTitle: "Xiaohongshu Downloader",
+    xiaohongshuDesc: "Download videos from Xiaohongshu (Rednote/小红书) without watermark.",
+    douyinTitle: "Douyin Downloader",
+    douyinDesc: "Download videos from Douyin (抖音/Chinese TikTok) without watermark.",
     thumbnailTitle: "Thumbnail Downloader",
     thumbnailDesc: "Download YouTube video thumbnails in full HD resolution.",
     mp4ToMp3Title: "MP4 to MP3",
@@ -170,6 +174,7 @@ module.exports = {
     statusDownloadStarted: "Download started ✓",
     statusConnectionError: "Connection error",
     statusPleaseUrl: "Please paste a video URL",
+    statusVideoReady: "Video ready! Choose quality and download \u2713",
     statusSelectFile: "Please select a file",
     statusUploadVideo: "Please upload a video file",
     statusSetEndTime: "Please set end time",
@@ -306,6 +311,40 @@ module.exports = {
           { q: "Can I download Twitter GIFs?", a: "Yes, GIFs are downloaded as MP4 video files." },
         ],
       },
+      xiaohongshu: {
+        name: "Xiaohongshu", title: "Xiaohongshu (Rednote) Video Downloader \u2013 No Watermark",
+        description: "Download Xiaohongshu (\u5C0F\u7EA2\u4E66/Rednote) videos without watermark. Free, fast, HD quality.",
+        placeholder: "https://www.xiaohongshu.com/explore/...",
+        features: [
+          { title: "No Watermark", desc: "Download clean Xiaohongshu videos without the watermark overlay." },
+          { title: "HD Quality", desc: "Save videos in the highest resolution available." },
+          { title: "Photo & Video", desc: "Download both video posts and photo slideshows." },
+          { title: "Free & Fast", desc: "No registration needed, instant processing." },
+        ],
+        faq: [
+          { q: "How to download Xiaohongshu videos?", a: "Copy the Xiaohongshu post link, paste it above, click 'Get Video', then download." },
+          { q: "Can I download Xiaohongshu photos?", a: "Currently our tool focuses on video content. Photo support may be added in the future." },
+          { q: "What is Xiaohongshu/Rednote?", a: "Xiaohongshu (\u5C0F\u7EA2\u4E66), also known as Rednote or RED, is a popular Chinese social media platform for lifestyle, beauty, fashion and travel content." },
+          { q: "Is it free?", a: "Yes, completely free with no limits." },
+        ],
+      },
+      douyin: {
+        name: "Douyin", title: "Douyin (抖音) Video Downloader – No Watermark",
+        description: "Download Douyin (抖音/Chinese TikTok) videos without watermark. Free, fast, HD quality.",
+        placeholder: "https://www.douyin.com/video/...",
+        features: [
+          { title: "No Watermark", desc: "Download clean Douyin videos without the watermark overlay." },
+          { title: "HD Quality", desc: "Save videos in the highest resolution available, up to 1080p." },
+          { title: "No App Required", desc: "Works directly in your browser – no app installation needed." },
+          { title: "Free & Fast", desc: "No registration needed, instant processing." },
+        ],
+        faq: [
+          { q: "How to download Douyin videos?", a: "Copy the Douyin video link, paste it above, click 'Get Video', then download." },
+          { q: "What is Douyin?", a: "Douyin (抖音) is the Chinese version of TikTok, operated by ByteDance. It has over 700 million daily active users in China." },
+          { q: "Can I download Douyin videos outside China?", a: "Yes, as long as you have the direct video link, our tool can process it from anywhere." },
+          { q: "Is it free?", a: "Yes, completely free with no limits." },
+        ],
+      },
     },
     // Legal pages
     legalPages: {
@@ -319,7 +358,7 @@ module.exports = {
       },
       disclaimer: {
         title: "Disclaimer",
-        content: '<h2>General Disclaimer</h2><p>SnapClip is an online tool that facilitates downloading publicly available video content. We do not host, store, or distribute any video files permanently.</p><h2>Copyright</h2><p>All videos downloaded through our service belong to their respective owners. Users are solely responsible for ensuring their downloads comply with applicable laws and the terms of service of the source platforms.</p><h2>No Affiliation</h2><p>SnapClip is not affiliated with TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, or any other platform. All trademarks and brand names belong to their respective owners.</p><h2>Personal Use</h2><p>This tool is intended for personal use only. Downloading videos for commercial purposes or redistribution without permission from the copyright holder is prohibited.</p>',
+        content: '<h2>General Disclaimer</h2><p>SnapClip is an online tool that facilitates downloading publicly available video content. We do not host, store, or distribute any video files permanently.</p><h2>Copyright</h2><p>All videos downloaded through our service belong to their respective owners. Users are solely responsible for ensuring their downloads comply with applicable laws and the terms of service of the source platforms.</p><h2>No Affiliation</h2><p>SnapClip is not affiliated with TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin, or any other platform. All trademarks and brand names belong to their respective owners.</p><h2>Personal Use</h2><p>This tool is intended for personal use only. Downloading videos for commercial purposes or redistribution without permission from the copyright holder is prohibited.</p>',
       },
       dmca: {
         title: "DMCA Policy",
@@ -334,7 +373,7 @@ module.exports = {
     otherLangName: "English",
     siteName: "SnapClip",
     siteTagline: "Tải Video Không Watermark",
-    siteDesc: "Công cụ tải video miễn phí từ TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter không có watermark.",
+    siteDesc: "Công cụ tải video miễn phí từ TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin không có watermark.",
     // Nav
     navTools: "Công cụ",
     navBlog: "Blog",
@@ -349,7 +388,7 @@ module.exports = {
     btnDownload: "Tải xuống",
     howItWorks: "Cách sử dụng",
     step1Title: "Sao chép Link",
-    step1Desc: "Sao chép link video từ TikTok, YouTube, Facebook, Instagram, Bilibili hoặc Twitter.",
+    step1Desc: "Sao chép link video từ TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu hoặc Douyin.",
     step2Title: "Dán & Lấy thông tin",
     step2Desc: 'Dán link vào ô phía trên và nhấn "Lấy Video" để xem các định dạng có sẵn.',
     step3Title: "Tải xuống",
@@ -379,7 +418,9 @@ module.exports = {
     bilibiliDesc: "Lưu video Bilibili về thiết bị của bạn.",
     twitterTitle: "Tải Video Twitter/X",
     twitterDesc: "Tải video từ các bài đăng Twitter/X.",
-    thumbnailTitle: "Tải Thumbnail",
+    xiaohongshuTitle: "Tải Video Xiaohongshu",
+    xiaohongshuDesc: "Tải video từ Xiaohongshu (Rednote/\u5C0F\u7EA2\u4E66) không watermark.",    douyinTitle: "Tải Video Douyin",
+    douyinDesc: "Tải video từ Douyin (抖音/TikTok Trung Quốc) không watermark.",    thumbnailTitle: "Tải Thumbnail",
     thumbnailDesc: "Tải thumbnail video YouTube chất lượng Full HD.",
     mp4ToMp3Title: "MP4 sang MP3",
     mp4ToMp3Desc: "Chuyển đổi file video sang MP3. Từ URL hoặc tải file lên.",
@@ -497,6 +538,7 @@ module.exports = {
     statusDownloadStarted: "Bắt đầu tải ✓",
     statusConnectionError: "Lỗi kết nối",
     statusPleaseUrl: "Vui lòng dán URL video",
+    statusVideoReady: "Sẵn sàng! Chọn chất lượng và tải xuống ✓",
     statusSelectFile: "Vui lòng chọn file",
     statusUploadVideo: "Vui lòng tải lên file video",
     statusSetEndTime: "Vui lòng đặt thời gian kết thúc",
@@ -633,6 +675,40 @@ module.exports = {
           { q: "Tôi có thể tải GIF Twitter không?", a: "Có, GIF được tải dưới dạng file video MP4." },
         ],
       },
+      xiaohongshu: {
+        name: "Xiaohongshu", title: "Tải Video Xiaohongshu (Rednote) \u2013 Không Watermark",
+        description: "Tải video Xiaohongshu (\u5C0F\u7EA2\u4E66/Rednote) không watermark. Miễn phí, nhanh, chất lượng HD.",
+        placeholder: "https://www.xiaohongshu.com/explore/...",
+        features: [
+          { title: "Không Watermark", desc: "Tải video Xiaohongshu sạch không có watermark." },
+          { title: "Chất lượng HD", desc: "Lưu video ở độ phân giải cao nhất có sẵn." },
+          { title: "Ảnh & Video", desc: "Tải cả bài đăng video và slideshow ảnh." },
+          { title: "Miễn phí & Nhanh", desc: "Không cần đăng ký, xử lý tức thì." },
+        ],
+        faq: [
+          { q: "Làm sao tải video Xiaohongshu?", a: "Sao chép link bài đăng Xiaohongshu, dán vào ô phía trên, nhấn 'Lấy Video', rồi tải xuống." },
+          { q: "Tôi có thể tải ảnh Xiaohongshu không?", a: "Hiện tại công cụ tập trung vào nội dung video. Hỗ trợ ảnh có thể được thêm trong tương lai." },
+          { q: "Xiaohongshu/Rednote là gì?", a: "Xiaohongshu (\u5C0F\u7EA2\u4E66), còn gọi là Rednote hoặc RED, là nền tảng mạng xã hội phổ biến của Trung Quốc về lifestyle, làm đẹp, thời trang và du lịch." },
+          { q: "Có miễn phí không?", a: "Có, hoàn toàn miễn phí không giới hạn." },
+        ],
+      },
+      douyin: {
+        name: "Douyin", title: "Tải Video Douyin (抖音) – Không Watermark",
+        description: "Tải video Douyin (抖音/TikTok Trung Quốc) không watermark. Miễn phí, nhanh, chất lượng HD.",
+        placeholder: "https://www.douyin.com/video/...",
+        features: [
+          { title: "Không Watermark", desc: "Tải video Douyin sạch không có watermark." },
+          { title: "Chất lượng HD", desc: "Lưu video ở độ phân giải cao nhất, lên đến 1080p." },
+          { title: "Không Cần App", desc: "Hoạt động trực tiếp trên trình duyệt – không cần cài ứng dụng." },
+          { title: "Miễn phí & Nhanh", desc: "Không cần đăng ký, xử lý tức thì." },
+        ],
+        faq: [
+          { q: "Làm sao tải video Douyin?", a: "Sao chép link video Douyin, dán vào ô phía trên, nhấn 'Lấy Video', rồi tải xuống." },
+          { q: "Douyin là gì?", a: "Douyin (抖音) là phiên bản Trung Quốc của TikTok, do ByteDance vận hành. Có hơn 700 triệu người dùng hàng ngày tại Trung Quốc." },
+          { q: "Có thể tải video Douyin ngoài Trung Quốc không?", a: "Có, miễn bạn có link video trực tiếp, công cụ có thể xử lý từ bất kỳ đâu." },
+          { q: "Có miễn phí không?", a: "Có, hoàn toàn miễn phí không giới hạn." },
+        ],
+      },
     },
     // Legal pages
     legalPages: {
@@ -646,7 +722,7 @@ module.exports = {
       },
       disclaimer: {
         title: "Tuyên bố miễn trừ trách nhiệm",
-        content: '<h2>Tuyên bố chung</h2><p>SnapClip là công cụ trực tuyến hỗ trợ tải nội dung video có sẵn công khai. Chúng tôi không lưu trữ, lưu giữ hay phân phối bất kỳ file video nào vĩnh viễn.</p><h2>Bản quyền</h2><p>Tất cả video được tải qua dịch vụ thuộc về chủ sở hữu tương ứng. Người dùng hoàn toàn chịu trách nhiệm đảm bảo việc tải xuống tuân thủ luật pháp hiện hành và điều khoản sử dụng của các nền tảng nguồn.</p><h2>Không liên kết</h2><p>SnapClip không liên kết với TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter hoặc bất kỳ nền tảng nào khác. Tất cả nhãn hiệu và thương hiệu thuộc về chủ sở hữu tương ứng.</p><h2>Sử dụng cá nhân</h2><p>Công cụ này chỉ dành cho mục đích sử dụng cá nhân. Việc tải video cho mục đích thương mại hoặc phân phối lại mà không có sự cho phép của chủ sở hữu bản quyền là bị cấm.</p>',
+        content: '<h2>Tuyên bố chung</h2><p>SnapClip là công cụ trực tuyến hỗ trợ tải nội dung video có sẵn công khai. Chúng tôi không lưu trữ, lưu giữ hay phân phối bất kỳ file video nào vĩnh viễn.</p><h2>Bản quyền</h2><p>Tất cả video được tải qua dịch vụ thuộc về chủ sở hữu tương ứng. Người dùng hoàn toàn chịu trách nhiệm đảm bảo việc tải xuống tuân thủ luật pháp hiện hành và điều khoản sử dụng của các nền tảng nguồn.</p><h2>Không liên kết</h2><p>SnapClip không liên kết với TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin hoặc bất kỳ nền tảng nào khác. Tất cả nhãn hiệu và thương hiệu thuộc về chủ sở hữu tương ứng.</p><h2>Sử dụng cá nhân</h2><p>Công cụ này chỉ dành cho mục đích sử dụng cá nhân. Việc tải video cho mục đích thương mại hoặc phân phối lại mà không có sự cho phép của chủ sở hữu bản quyền là bị cấm.</p>',
       },
       dmca: {
         title: "Chính sách DMCA",

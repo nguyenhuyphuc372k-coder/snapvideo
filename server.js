@@ -54,6 +54,8 @@ const upload = multer({ dest: UPLOAD_DIR, limits: { fileSize: 100 * 1024 * 1024 
 const SUPPORTED_HOSTS = [
   "tiktok.com", "youtube.com", "youtu.be", "facebook.com", "fb.watch",
   "instagram.com", "bilibili.com", "b23.tv", "twitter.com", "x.com",
+  "xiaohongshu.com", "xhslink.com",
+  "douyin.com",
 ];
 
 function isValidUrl(str) {
@@ -86,7 +88,7 @@ app.get("/", (req, res) => {
   const posts = getBlogPosts(req.lang);
   res.render("home", tplVars(req, {
     title: "SnapClip \u2013 Download Videos Without Watermark",
-    description: "Free online tool to download videos from TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter without watermark.",
+    description: "Free online tool to download videos from TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin without watermark.",
     canonical: BASE_URL + "/",
     latestPosts: posts.slice(0, 3),
   }));
@@ -96,7 +98,7 @@ app.get("/vi", (req, res) => {
   const posts = getBlogPosts(req.lang);
   res.render("home", tplVars(req, {
     title: "SnapClip \u2013 T\u1EA3i Video Kh\u00F4ng Watermark",
-    description: "C\u00F4ng c\u1EE5 tr\u1EF1c tuy\u1EBFn mi\u1EC5n ph\u00ED t\u1EA3i video t\u1EEB TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter kh\u00F4ng watermark.",
+    description: "C\u00F4ng c\u1EE5 tr\u1EF1c tuy\u1EBFn mi\u1EC5n ph\u00ED t\u1EA3i video t\u1EEB TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin kh\u00F4ng watermark.",
     canonical: BASE_URL + "/vi/",
     latestPosts: posts.slice(0, 3),
   }));
@@ -117,6 +119,8 @@ const platformRoutes = {
   "/facebook-video-downloader": "facebook",
   "/bilibili-video-downloader": "bilibili",
   "/twitter-video-downloader": "twitter",
+  "/xiaohongshu-video-downloader": "xiaohongshu",
+  "/douyin-video-downloader": "douyin",
 };
 
 Object.entries(platformRoutes).forEach(([route, key]) => {
@@ -291,6 +295,8 @@ app.get("/sitemap.xml", (req, res) => {
     { path: "/facebook-video-downloader", priority: "0.8", changefreq: "weekly" },
     { path: "/bilibili-video-downloader", priority: "0.7", changefreq: "weekly" },
     { path: "/twitter-video-downloader", priority: "0.8", changefreq: "weekly" },
+    { path: "/xiaohongshu-video-downloader", priority: "0.8", changefreq: "weekly" },
+    { path: "/douyin-video-downloader", priority: "0.8", changefreq: "weekly" },
     { path: "/youtube-thumbnail-downloader", priority: "0.7", changefreq: "weekly" },
     { path: "/mp4-to-mp3", priority: "0.7", changefreq: "weekly" },
     { path: "/video-to-audio", priority: "0.7", changefreq: "weekly" },

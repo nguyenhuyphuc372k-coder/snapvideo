@@ -72,6 +72,7 @@ img { max-width: 100%; height: auto; display: block; }
 /* Status */
 .status { margin-top: 14px; font-size: 0.85rem; color: var(--text-lighter); text-align: center; min-height: 20px; }
 .status.error { color: #c44; }
+.status.success { color: #2a8f2a; font-weight: 600; }
 
 /* Result box */
 .result-box {

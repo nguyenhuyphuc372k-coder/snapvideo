@@ -3,11 +3,11 @@ const T = window.T || {};
 function $(sel, ctx = document) { return ctx.querySelector(sel); }
 function $$(sel, ctx = document) { return [...ctx.querySelectorAll(sel)]; }
 
-function setStatus(msg, isError) {
+function setStatus(msg, isError, isSuccess) {
   const el = $('#status');
   if (!el) return;
   el.textContent = msg;
-  el.className = 'status' + (isError ? ' error' : '');
+  el.className = 'status' + (isError ? ' error' : '') + (isSuccess ? ' success' : '');
 }
 
 function setLoading(msg) {
@@ -100,7 +100,9 @@ async function fetchVideoInfo() {
     }
 
     if (resultBox) resultBox.classList.add('show');
-    setStatus('');
+    setStatus(T.statusVideoReady || 'Video ready! Choose quality and download ✓', false, true);
+    // Auto-scroll to result on mobile
+    setTimeout(() => { if (resultBox) resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
   } catch { setStatus(T.statusConnectionError || 'Connection error', true); }
   if (fetchBtn) fetchBtn.disabled = false;
 }
