@@ -3,7 +3,7 @@
   --bg-alt: #f7f8f9;
   --text: #111;
   --text-light: #555;
-  --text-lighter: #999;
+  --text-lighter: #767676;
   --border: #e5e5e5;
   --accent: #111;
   --accent-hover: #333;
@@ -13,6 +13,8 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.skip-link { position: absolute; top: -40px; left: 0; background: var(--accent); color: #fff; padding: 8px 16px; z-index: 100; transition: top 0.2s; }
+.skip-link:focus { top: 0; }
 body { font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.6; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }

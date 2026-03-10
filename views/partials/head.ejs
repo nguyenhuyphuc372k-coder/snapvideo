@@ -30,6 +30,10 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/images/icon-512x512.png" />
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#111111" />
+  <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin />
+  <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+  <link rel="preload" href="/css/style.css" as="style" />
+  <link rel="preload" href="/js/app.js" as="script" />
   <link rel="stylesheet" href="/css/style.css" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5262734754559750" crossorigin="anonymous"></script>
   <script>window.T = <%- JSON.stringify({statusFetching:t.statusFetching,statusProcessing:t.statusProcessing,statusError:t.statusError,statusDownloadStarted:t.statusDownloadStarted,statusConnectionError:t.statusConnectionError,statusPleaseUrl:t.statusPleaseUrl,statusSelectFile:t.statusSelectFile,statusUploadVideo:t.statusUploadVideo,statusSetEndTime:t.statusSetEndTime,quality:t.quality,btnDownload:t.btnDownload,btnGetVideo:t.btnGetVideo,noSubsFound:t.noSubsFound,downloadSrt:t.downloadSrt}) %></script>
@@ -37,3 +41,4 @@
   <% if (typeof faqSchema !== 'undefined' && faqSchema && faqSchema.length) { %><script type="application/ld+json"><%- JSON.stringify({"@context":"https://schema.org","@type":"FAQPage","mainEntity":faqSchema.map(function(f){return{"@type":"Question","name":f.q,"acceptedAnswer":{"@type":"Answer","text":f.a}}})}) %></script><% } %>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to content</a>
