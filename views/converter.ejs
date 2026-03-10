@@ -15,6 +15,16 @@
       <button class="btn" id="convertBtn" onclick="convertUrlToAudio()"><%= t.btnConvert %></button>
     </div>
     <div class="status" id="status"></div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+        <div class="progress-text" id="progressText">0%</div>
+      </div>
+      <div class="progress-info">
+        <span id="progressSpeed"></span>
+        <span id="progressEta"></span>
+      </div>
+    </div>
   </div>
 
   <%- include('partials/ad-display') %>

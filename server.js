@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const { execFile } = require("child_process");
+const { execFile, spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
@@ -71,6 +71,19 @@ function isSupportedPlatform(urlStr) {
 function autoDeleteFile(filePath, ms = 600000) {
   setTimeout(() => { try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {} }, ms);
 }
+
+// ===================== DOWNLOAD PROGRESS TRACKING =====================
+const downloadJobs = new Map();
+
+function cleanupJob(jobId, delayMs = 120000) {
+  setTimeout(() => downloadJobs.delete(jobId), delayMs);
+}
+
+app.get("/api/progress/:jobId", (req, res) => {
+  const job = downloadJobs.get(req.params.jobId);
+  if (!job) return res.json({ status: "unknown" });
+  res.json(job);
+});
 
 // ===================== BLOG HELPERS =====================
 function getBlogPosts(lang) {
@@ -386,8 +399,9 @@ app.post("/api/download", (req, res) => {
   if (!isSupportedPlatform(url)) return res.status(400).json({ error: "Unsupported platform" });
 
   const fileId = uuidv4();
+  const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "-o", outTpl, "--merge-output-format", "mp4"];
+  const args = ["--no-warnings", "--no-playlist", "--newline", "-o", outTpl, "--merge-output-format", "mp4"];
   if (formatId && formatId !== "best") {
     const safeFormat = String(formatId).replace(/[^a-zA-Z0-9+_-]/g, "");
     args.push("-f", `${safeFormat}+bestaudio/best`);
@@ -396,35 +410,97 @@ app.post("/api/download", (req, res) => {
   }
   args.push(url);
 
-  execFile("yt-dlp", args, { timeout: 120000, maxBuffer: 10 * 1024 * 1024 }, (err) => {
-    if (err) return res.status(500).json({ error: "Download failed" });
+  downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
+  res.json({ jobId });
+
+  const proc = spawn("yt-dlp", args, { timeout: 120000 });
+  let stdoutBuf = "";
+  proc.stdout.on("data", (chunk) => {
+    stdoutBuf += chunk.toString();
+    const lines = stdoutBuf.split(/\r?\n/);
+    stdoutBuf = lines.pop();
+    for (const line of lines) {
+      const m = line.match(/(\d+\.?\d*)%/);
+      if (m) {
+        const job = downloadJobs.get(jobId);
+        if (job) {
+          job.percent = parseFloat(m[1]);
+          const sp = line.match(/at\s+([\d.]+\s*\S+\/s)/);
+          const et = line.match(/ETA\s+(\S+)/);
+          if (sp) job.speed = sp[1];
+          if (et) job.eta = et[1];
+        }
+      }
+    }
+  });
+  proc.on("close", (code) => {
+    if (code !== 0) {
+      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      cleanupJob(jobId);
+      return;
+    }
     const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId));
-    if (!files.length) return res.status(500).json({ error: "File not found" });
+    if (!files.length) {
+      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      cleanupJob(jobId);
+      return;
+    }
     const filePath = path.join(DOWNLOAD_DIR, files[0]);
     const ext = path.extname(files[0]);
-    res.json({ downloadUrl: `/api/file/${fileId}${ext}`, filename: `video${ext}` });
+    downloadJobs.set(jobId, { status: "done", percent: 100, downloadUrl: `/api/file/${fileId}${ext}`, filename: `video${ext}` });
     autoDeleteFile(filePath);
+    cleanupJob(jobId);
   });
 });
-
-// Download MP3 (audio extraction)
-app.post("/api/download-mp3", (req, res) => {
   const { url } = req.body;
   if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
   if (!isSupportedPlatform(url)) return res.status(400).json({ error: "Unsupported platform" });
 
   const fileId = uuidv4();
+  const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "-o", outTpl, "-x", "--audio-format", "mp3", url];
+  const args = ["--no-warnings", "--no-playlist", "--newline", "-o", outTpl, "-x", "--audio-format", "mp3", url];
 
-  execFile("yt-dlp", args, { timeout: 120000, maxBuffer: 10 * 1024 * 1024 }, (err) => {
-    if (err) return res.status(500).json({ error: "Audio extraction failed" });
+  downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
+  res.json({ jobId });
+
+  const proc = spawn("yt-dlp", args, { timeout: 120000 });
+  let stdoutBuf = "";
+  proc.stdout.on("data", (chunk) => {
+    stdoutBuf += chunk.toString();
+    const lines = stdoutBuf.split(/\r?\n/);
+    stdoutBuf = lines.pop();
+    for (const line of lines) {
+      const m = line.match(/(\d+\.?\d*)%/);
+      if (m) {
+        const job = downloadJobs.get(jobId);
+        if (job) {
+          job.percent = parseFloat(m[1]);
+          const sp = line.match(/at\s+([\d.]+\s*\S+\/s)/);
+          const et = line.match(/ETA\s+(\S+)/);
+          if (sp) job.speed = sp[1];
+          if (et) job.eta = et[1];
+        }
+      }
+    }
+  });
+  proc.on("close", (code) => {
+    if (code !== 0) {
+      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      cleanupJob(jobId);
+      return;
+    }
     const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId));
-    if (!files.length) return res.status(500).json({ error: "File not found" });
+    if (!files.length) {
+      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      cleanupJob(jobId);
+      return;
+    }
     const filePath = path.join(DOWNLOAD_DIR, files[0]);
     const ext = path.extname(files[0]);
-    res.json({ downloadUrl: `/api/file/${fileId}${ext}`, filename: `audio${ext}` });
+    downloadJobs.set(jobId, { status: "done", percent: 100, downloadUrl: `/api/file/${fileId}${ext}`, filename: `audio${ext}` });
     autoDeleteFile(filePath);
+    cleanupJob(jobId);
   });
 });
 

@@ -31,6 +31,16 @@
         <div class="formats-list" id="formatsList"></div>
       </div>
       <button class="btn" id="downloadBtn" onclick="downloadVideo()"><%= t.btnDownload %></button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="progressBar"></div>
+          <div class="progress-text" id="progressText">0%</div>
+        </div>
+        <div class="progress-info">
+          <span id="progressSpeed"></span>
+          <span id="progressEta"></span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

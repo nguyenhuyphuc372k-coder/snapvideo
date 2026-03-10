@@ -107,11 +107,54 @@ async function fetchVideoInfo() {
   if (fetchBtn) fetchBtn.disabled = false;
 }
 
+/* ========== Progress bar helpers ========== */
+function showProgress(percent, speed, eta) {
+  const wrap = $('#progressWrap');
+  const bar = $('#progressBar');
+  const text = $('#progressText');
+  const spd = $('#progressSpeed');
+  const etaEl = $('#progressEta');
+  if (wrap) wrap.classList.add('show');
+  if (bar) bar.style.width = Math.min(percent, 100) + '%';
+  if (text) text.textContent = Math.round(percent) + '%';
+  if (spd) spd.textContent = speed ? '⚡ ' + speed : '';
+  if (etaEl) etaEl.textContent = eta ? 'ETA ' + eta : '';
+}
+function hideProgress() {
+  const wrap = $('#progressWrap');
+  if (wrap) wrap.classList.remove('show');
+}
+
+function pollProgress(jobId) {
+  return new Promise((resolve, reject) => {
+    const iv = setInterval(async () => {
+      try {
+        const r = await fetch('/api/progress/' + jobId);
+        const d = await r.json();
+        if (d.status === 'downloading') {
+          showProgress(d.percent, d.speed, d.eta);
+        } else if (d.status === 'done') {
+          showProgress(100, '', '');
+          clearInterval(iv);
+          resolve(d);
+        } else if (d.status === 'error') {
+          clearInterval(iv);
+          reject(new Error('Download failed'));
+        } else {
+          clearInterval(iv);
+          reject(new Error('Unknown job'));
+        }
+      } catch { clearInterval(iv); reject(new Error('Connection error')); }
+    }, 500);
+  });
+}
+
 async function downloadVideo() {
   if (!currentUrl) return;
   const btn = $('#downloadBtn');
   if (btn) btn.disabled = true;
-  setLoading(T.statusProcessing || 'Processing download...');
+  setStatus(T.statusProcessing || 'Processing download...', false);
+  showProgress(0, '', '');
 
   const endpoint = downloadMode === 'mp3' ? '/api/download-mp3' : '/api/download';
   try {
@@ -121,14 +164,19 @@ async function downloadVideo() {
       body: JSON.stringify({ url: currentUrl, formatId: selectedFormat })
     });
     const data = await res.json();
-    if (!res.ok) { setStatus(data.error || T.statusError || 'Download failed', true); if (btn) btn.disabled = false; return; }
+    if (!res.ok) { setStatus(data.error || T.statusError || 'Download failed', true); hideProgress(); if (btn) btn.disabled = false; return; }
 
+    const result = await pollProgress(data.jobId);
+    hideProgress();
     const a = document.createElement('a');
-    a.href = data.downloadUrl;
-    a.download = data.filename || 'video.mp4';
+    a.href = result.downloadUrl;
+    a.download = result.filename || 'video.mp4';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setStatus(T.statusDownloadStarted || 'Download started ✓');
-  } catch { setStatus(T.statusConnectionError || 'Connection error', true); }
+    setStatus(T.statusDownloadStarted || 'Download started ✓', false, true);
+  } catch (e) {
+    hideProgress();
+    setStatus(e.message === 'Download failed' ? (T.statusError || 'Download failed') : (T.statusConnectionError || 'Connection error'), true);
+  }
   if (btn) btn.disabled = false;
 }
 
@@ -176,7 +224,8 @@ async function convertUrlToAudio() {
 
   const btn = $('#convertBtn');
   if (btn) btn.disabled = true;
-  setLoading(T.statusProcessing || 'Extracting audio...');
+  setStatus(T.statusProcessing || 'Extracting audio...', false);
+  showProgress(0, '', '');
 
   try {
     const res = await fetch('/api/download-mp3', {
@@ -185,14 +234,19 @@ async function convertUrlToAudio() {
       body: JSON.stringify({ url })
     });
     const data = await res.json();
-    if (!res.ok) { setStatus(data.error || T.statusError || 'Error', true); if (btn) btn.disabled = false; return; }
+    if (!res.ok) { setStatus(data.error || T.statusError || 'Error', true); hideProgress(); if (btn) btn.disabled = false; return; }
 
+    const result = await pollProgress(data.jobId);
+    hideProgress();
     const a = document.createElement('a');
-    a.href = data.downloadUrl;
-    a.download = data.filename || 'audio.mp3';
+    a.href = result.downloadUrl;
+    a.download = result.filename || 'audio.mp3';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setStatus(T.statusDownloadStarted || 'Download started ✓');
-  } catch { setStatus(T.statusConnectionError || 'Connection error', true); }
+    setStatus(T.statusDownloadStarted || 'Download started ✓', false, true);
+  } catch (e) {
+    hideProgress();
+    setStatus(e.message === 'Download failed' ? (T.statusError || 'Error') : (T.statusConnectionError || 'Connection error'), true);
+  }
   if (btn) btn.disabled = false;
 }
 
