@@ -30,6 +30,11 @@ function formatBytes(b) {
 
 /* ========== FAQ accordion ========== */
 document.addEventListener('DOMContentLoaded', () => {
+  // Warm up server (helps reduce cold start delay on free hosting)
+  try {
+    fetch('/api/ping', { cache: 'no-store' }).catch(() => {});
+  } catch {}
+
   $$('.faq-q').forEach(btn => {
     btn.addEventListener('click', () => {
       const item = btn.closest('.faq-item');

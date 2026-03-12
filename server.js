@@ -75,6 +75,40 @@ function autoDeleteFile(filePath, ms = 600000) {
 // Douyin direct handler (bypasses yt-dlp for Douyin)
 const { getDouyinInfo, downloadDouyinVideo, isDouyinUrl } = require("./douyin-handler");
 
+// ===================== INFO CACHE (speed up repeated pastes) =====================
+const INFO_CACHE_TTL_MS = parseInt(process.env.INFO_CACHE_TTL_MS || "600000", 10); // 10 min
+const infoCache = new Map();
+
+function normalizeInfoCacheKey(urlStr) {
+  try {
+    const u = new URL(String(urlStr || "").trim());
+    u.hash = "";
+    const dropExact = new Set(["gclid", "fbclid", "igshid"]);
+    for (const key of [...u.searchParams.keys()]) {
+      if (key.startsWith("utm_") || dropExact.has(key)) u.searchParams.delete(key);
+    }
+    return u.toString();
+  } catch {
+    return String(urlStr || "").trim();
+  }
+}
+
+function getCachedInfo(urlStr) {
+  const key = normalizeInfoCacheKey(urlStr);
+  const entry = infoCache.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    infoCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCachedInfo(urlStr, data) {
+  const key = normalizeInfoCacheKey(urlStr);
+  infoCache.set(key, { expiresAt: Date.now() + INFO_CACHE_TTL_MS, data });
+}
+
 // ===================== DOWNLOAD PROGRESS TRACKING =====================
 const downloadJobs = new Map();
 
@@ -361,6 +395,11 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // ===================== API ROUTES =====================
 
+// Warm-up endpoint (helps reduce Render cold-start impact)
+app.get("/api/ping", (req, res) => {
+  res.json({ ok: true, ts: Date.now() });
+});
+
 // Get video info
 app.post("/api/info", async (req, res) => {
   const { url } = req.body;
@@ -377,6 +416,9 @@ app.post("/api/info", async (req, res) => {
       return res.status(500).json({ error: "Cannot fetch Douyin video info. Please check the URL." });
     }
   }
+
+  const cached = getCachedInfo(url);
+  if (cached) return res.json(cached);
 
   execFile("yt-dlp", ["--no-warnings", "--dump-json", "--no-playlist", url],
     { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
@@ -398,12 +440,14 @@ app.post("/api/info", async (req, res) => {
       const seen = new Set();
       formats = formats.filter(f => { if (seen.has(f.resolution)) return false; seen.add(f.resolution); return true; });
       formats = formats.map(({ height, ...r }) => r);
-      res.json({
+      const payload = {
         title: info.title || "Video", thumbnail: info.thumbnail || null,
         duration: info.duration || null, uploader: info.uploader || info.channel || "",
         platform: info.extractor_key || info.extractor || "",
         formats: formats.length ? formats : [{ formatId: "best", ext: "mp4", resolution: "Best", quality: "best" }],
-      });
+      };
+      setCachedInfo(url, payload);
+      res.json(payload);
     } catch { res.status(500).json({ error: "Failed to parse video info" }); }
   });
 });
@@ -444,7 +488,7 @@ app.post("/api/download", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-o", outTpl, "--merge-output-format", "mp4"];
+  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", "4", "-o", outTpl, "--merge-output-format", "mp4"];
   if (formatId && formatId !== "best") {
     const safeFormat = String(formatId).replace(/[^a-zA-Z0-9+_-]/g, "");
     args.push("-f", `${safeFormat}+bestaudio/best`);
@@ -456,7 +500,10 @@ app.post("/api/download", (req, res) => {
   downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
   res.json({ jobId });
 
-  const proc = spawn("yt-dlp", args, { timeout: 120000 });
+  const proc = spawn("yt-dlp", args);
+  const killTimer = setTimeout(() => {
+    try { proc.kill("SIGKILL"); } catch {}
+  }, 10 * 60 * 1000);
   let stdoutBuf = "";
   proc.stdout.on("data", (chunk) => {
     stdoutBuf += chunk.toString();
@@ -477,6 +524,7 @@ app.post("/api/download", (req, res) => {
     }
   });
   proc.on("close", (code) => {
+    clearTimeout(killTimer);
     if (code !== 0) {
       downloadJobs.set(jobId, { status: "error", percent: 0 });
       cleanupJob(jobId);
@@ -505,12 +553,15 @@ app.post("/api/download-mp3", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-o", outTpl, "-x", "--audio-format", "mp3", url];
+  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", "4", "-o", outTpl, "-x", "--audio-format", "mp3", url];
 
   downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
   res.json({ jobId });
 
-  const proc = spawn("yt-dlp", args, { timeout: 120000 });
+  const proc = spawn("yt-dlp", args);
+  const killTimer = setTimeout(() => {
+    try { proc.kill("SIGKILL"); } catch {}
+  }, 10 * 60 * 1000);
   let stdoutBuf = "";
   proc.stdout.on("data", (chunk) => {
     stdoutBuf += chunk.toString();
@@ -531,6 +582,7 @@ app.post("/api/download-mp3", (req, res) => {
     }
   });
   proc.on("close", (code) => {
+    clearTimeout(killTimer);
     if (code !== 0) {
       downloadJobs.set(jobId, { status: "error", percent: 0 });
       cleanupJob(jobId);
