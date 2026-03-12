@@ -35,6 +35,29 @@ function langMiddleware(req, res, next) {
 }
 app.use(langMiddleware);
 
+// SEO: normalize trailing slashes to avoid duplicate URLs
+// - Keep: "/" and "/vi/" (language root)
+// - Redirect: "/vi" -> "/vi/"
+// - Redirect: any other path ending with "/" -> same path without trailing slash
+function trailingSlashNormalization(req, res, next) {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+
+  const pathname = req.path;
+  const querySuffix = req.url.slice(req.path.length); // includes leading "?" if present
+
+  if (pathname === "/vi") {
+    return res.redirect(301, "/vi/" + querySuffix);
+  }
+
+  if (pathname.length > 1 && pathname.endsWith("/") && pathname !== "/vi/") {
+    const normalized = pathname.replace(/\/+$/, "");
+    return res.redirect(301, normalized + querySuffix);
+  }
+
+  next();
+}
+app.use(trailingSlashNormalization);
+
 function tplVars(req, extra) {
   const currentPath = req.path.replace(/^\/vi/, "") || "/";
   return {
