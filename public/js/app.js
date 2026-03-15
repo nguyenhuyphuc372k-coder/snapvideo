@@ -310,53 +310,6 @@ async function convertFile() {
   if (btn) btn.disabled = false;
 }
 
-/* ========== Subtitle downloader ========== */
-async function fetchSubtitles() {
-  const url = ($('#urlInput') || {}).value?.trim();
-  if (!url) return setStatus(T.statusPleaseUrl || 'Please paste a video URL', true);
-
-  const btn = $('#fetchBtn');
-  if (btn) btn.disabled = true;
-  setLoading(T.statusFetching || 'Fetching subtitles...');
-
-  try {
-    const res = await fetch('/api/subtitles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-    const data = await res.json();
-    if (!res.ok) { setStatus(data.error || T.statusError || 'Error', true); if (btn) btn.disabled = false; return; }
-
-    const list = $('#subtitlesList');
-    if (list && data.subtitles) {
-      list.innerHTML = '';
-      if (data.subtitles.length === 0) {
-        list.innerHTML = '<p style="color:#999;font-size:0.88rem">' + (T.noSubsFound || 'No subtitles found for this video.') + '</p>';
-      } else {
-        data.subtitles.forEach(sub => {
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)';
-          const label = document.createElement('span');
-          label.style.fontSize = '0.9rem';
-          label.textContent = sub.lang;
-          const link = document.createElement('a');
-          link.href = '/api/subtitle-file?url=' + encodeURIComponent(url) + '&lang=' + encodeURIComponent(sub.code);
-          link.className = 'btn';
-          link.style.cssText = 'padding:6px 16px;font-size:0.8rem';
-          link.download = '';
-          link.textContent = T.downloadSrt || 'Download .srt';
-          row.appendChild(label);
-          row.appendChild(link);
-          list.appendChild(row);
-        });
-      }
-      list.style.display = 'block';
-    }
-    setStatus('');
-  } catch { setStatus(T.statusConnectionError || 'Connection error', true); }
-  if (btn) btn.disabled = false;
-}
 
 /* ========== Video trimmer ========== */
 function handleTrimUpload(input) {

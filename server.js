@@ -609,19 +609,8 @@ dualRoute("/video-to-audio", (req, res) => {
   }));
 });
 
-dualRoute("/subtitle-downloader", (req, res) => {
-  res.render("subtitle-downloader", tplVars(req, {
-    title: req.t.subtitlePageTitle + " \u2013 SnapClip",
-    description: req.t.subtitlePageDesc,
-    canonical: BASE_URL + req.langPrefix + "/subtitle-downloader",
-    faqSchema: [{q:req.t.subFaq1Q,a:req.t.subFaq1A},{q:req.t.subFaq2Q,a:req.t.subFaq2A}],
-    breadcrumbs: [
-      { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
-      { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
-      { name: req.t.subtitleTitle },
-    ],
-  }));
-});
+// Redirect old subtitle page to tools
+dualRoute("/subtitle-downloader", (req, res) => res.redirect(301, req.langPrefix + "/tools"));
 
 dualRoute("/video-trimmer", (req, res) => {
   res.render("video-trimmer", tplVars(req, {
@@ -757,7 +746,6 @@ app.get("/sitemap.xml", (req, res) => {
     { path: "/youtube-thumbnail-downloader", priority: "0.7", changefreq: "weekly" },
     { path: "/mp4-to-mp3", priority: "0.7", changefreq: "weekly" },
     { path: "/video-to-audio", priority: "0.7", changefreq: "weekly" },
-    { path: "/subtitle-downloader", priority: "0.7", changefreq: "weekly" },
     { path: "/video-trimmer", priority: "0.7", changefreq: "weekly" },
     { path: "/blog", priority: "0.8", changefreq: "daily" },
     { path: "/faq", priority: "0.6", changefreq: "monthly" },
@@ -1205,51 +1193,6 @@ app.post("/api/thumbnail", (req, res) => {
   });
 });
 
-// Subtitles list
-app.post("/api/subtitles", (req, res) => {
-  const { url } = req.body;
-  if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
-
-  execFile("yt-dlp", ["--no-warnings", "--dump-json", "--no-playlist", url],
-    { timeout: 20000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
-    if (err) return res.status(500).json({ error: "Cannot fetch video info" });
-    try {
-      const info = JSON.parse(stdout);
-      const subs = [];
-      const addSubs = (obj, prefix) => {
-        if (!obj) return;
-        Object.entries(obj).forEach(([code, formats]) => {
-          const name = (formats[0] && formats[0].name) || code;
-          subs.push({ code, lang: prefix + name });
-        });
-      };
-      addSubs(info.subtitles, "");
-      addSubs(info.automatic_captions, "[Auto] ");
-      res.json({ subtitles: subs });
-    } catch { res.status(500).json({ error: "Failed to parse info" }); }
-  });
-});
-
-// Subtitle file download
-app.get("/api/subtitle-file", (req, res) => {
-  const { url, lang } = req.query;
-  if (!url || !isValidUrl(url) || !lang) return res.status(400).json({ error: "Invalid parameters" });
-  if (!/^[a-zA-Z0-9_-]+$/.test(lang)) return res.status(400).json({ error: "Invalid language code" });
-
-  const fileId = uuidv4();
-  const outTpl = path.join(DOWNLOAD_DIR, fileId);
-  const args = ["--no-warnings", "--no-playlist", "--write-sub", "--write-auto-sub",
-    "--sub-lang", lang, "--sub-format", "srt", "--skip-download", "-o", outTpl, url];
-
-  execFile("yt-dlp", args, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, (err) => {
-    if (err) return res.status(500).json({ error: "Subtitle download failed" });
-    const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId) && f.endsWith(".srt"));
-    if (!files.length) return res.status(404).json({ error: "No subtitle file generated" });
-    const filePath = path.join(DOWNLOAD_DIR, files[0]);
-    res.download(filePath, `subtitle_${lang}.srt`, () => autoDeleteFile(filePath, 60000));
-  });
-});
-
 // File upload: convert to MP3
 app.post("/api/convert", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -1296,7 +1239,7 @@ app.get("/api/file/:filename", (req, res) => {
   if (!filePath.startsWith(DOWNLOAD_DIR)) return res.status(400).json({ error: "Invalid path" });
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found or expired" });
   const ext = path.extname(filename);
-  const names = { ".mp4": "video.mp4", ".mp3": "audio.mp3", ".srt": "subtitle.srt" };
+  const names = { ".mp4": "video.mp4", ".mp3": "audio.mp3" };
   res.download(filePath, names[ext] || "file" + ext);
 });
 
