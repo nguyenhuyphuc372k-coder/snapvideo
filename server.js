@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 const DOWNLOAD_DIR = path.join(__dirname, "downloads");
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 const BASE_URL = process.env.BASE_URL || "https://snapclip.pro";
+const YTDLP_USER_AGENT = process.env.YTDLP_USER_AGENT || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
 [DOWNLOAD_DIR, UPLOAD_DIR].forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
 
@@ -98,6 +99,173 @@ function isSupportedPlatform(urlStr) {
   catch { return false; }
 }
 
+function isTikTokUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    const host = u.hostname.toLowerCase();
+    return host === "tiktok.com" || host.endsWith(".tiktok.com");
+  } catch {
+    return false;
+  }
+}
+
+function isYouTubeUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    const host = u.hostname.toLowerCase();
+    return host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com");
+  } catch {
+    return false;
+  }
+}
+
+function isFacebookUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    const host = u.hostname.toLowerCase();
+    return host === "facebook.com" || host.endsWith(".facebook.com") || host === "fb.watch" || host.endsWith(".fb.watch");
+  } catch {
+    return false;
+  }
+}
+
+function isXiaohongshuUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    const host = u.hostname.toLowerCase();
+    return host === "xiaohongshu.com" || host.endsWith(".xiaohongshu.com")
+      || host === "xhslink.com" || host.endsWith(".xhslink.com");
+  } catch {
+    return false;
+  }
+}
+
+async function fetchJsonWithTimeout(url, { timeoutMs = 2500, headers = {} } = {}) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "accept": "application/json,text/plain,*/*",
+        "user-agent": YTDLP_USER_AGENT,
+        ...headers,
+      },
+      signal: ac.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function fetchTextWithTimeout(url, { timeoutMs = 2500, headers = {} } = {}) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9",
+        "user-agent": YTDLP_USER_AGENT,
+        ...headers,
+      },
+      signal: ac.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function decodeHtml(text) {
+  return String(text || "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function extractMetaContent(html, attr, value) {
+  const re = new RegExp(`<meta[^>]+${attr}=["']${value}["'][^>]+content=["']([^"']+)["'][^>]*>|<meta[^>]+content=["']([^"']+)["'][^>]+${attr}=["']${value}["'][^>]*>`, "i");
+  const match = String(html || "").match(re);
+  return decodeHtml((match && (match[1] || match[2])) || "").trim() || null;
+}
+
+function extractTitleTag(html) {
+  const match = String(html || "").match(/<title[^>]*>([^<]+)<\/title>/i);
+  return decodeHtml((match && match[1]) || "").trim() || null;
+}
+
+function buildPartialPayload({ title, thumbnail, uploader, platform }) {
+  return {
+    title: title || "Video",
+    thumbnail: thumbnail || null,
+    duration: null,
+    uploader: uploader || "",
+    platform,
+    formats: [{ formatId: "best", ext: "mp4", resolution: "Best", quality: "best" }],
+    partial: true,
+  };
+}
+
+async function fetchTikTokOEmbed(url) {
+  const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+  const data = await fetchJsonWithTimeout(oembedUrl, { timeoutMs: 2500 });
+  return buildPartialPayload({
+    title: data.title || "Video",
+    thumbnail: data.thumbnail_url || null,
+    uploader: data.author_name || data.author_url || "",
+    platform: "TikTok",
+  });
+}
+
+async function fetchYouTubeOEmbed(url) {
+  const oembedUrl = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`;
+  const data = await fetchJsonWithTimeout(oembedUrl, { timeoutMs: 2500 });
+  return buildPartialPayload({
+    title: data.title || "Video",
+    thumbnail: data.thumbnail_url || null,
+    uploader: data.author_name || "",
+    platform: "Youtube",
+  });
+}
+
+async function fetchFacebookMeta(url) {
+  const html = await fetchTextWithTimeout(url, { timeoutMs: 3000 });
+  const title = extractMetaContent(html, "property", "og:title")
+    || extractMetaContent(html, "name", "twitter:title")
+    || extractTitleTag(html);
+  const thumbnail = extractMetaContent(html, "property", "og:image")
+    || extractMetaContent(html, "name", "twitter:image");
+  if (!title && !thumbnail) throw new Error("Could not parse Facebook metadata");
+  return buildPartialPayload({
+    title,
+    thumbnail,
+    uploader: "",
+    platform: "Facebook",
+  });
+}
+
+function ytDlpPlatformArgs(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    const host = u.hostname.toLowerCase();
+    // YouTube sometimes requires different clients; android is often more resilient.
+    if (host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com")) {
+      return ["--extractor-args", "youtube:player_client=android"];
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
 function autoDeleteFile(filePath, ms = 600000) {
   setTimeout(() => { try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {} }, ms);
 }
@@ -178,7 +346,7 @@ function fetchInfoViaYtDlp(url, timeoutMs = 30000) {
   return new Promise((resolve, reject) => {
     execFile(
       "yt-dlp",
-      ["--no-warnings", "--dump-json", "--no-playlist", url],
+      ["--no-warnings", "--user-agent", YTDLP_USER_AGENT, "--dump-json", "--no-playlist", ...ytDlpPlatformArgs(url), url],
       { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
       (err, stdout) => {
         if (err) return reject(err);
@@ -193,9 +361,16 @@ function fetchInfoViaYtDlp(url, timeoutMs = 30000) {
   });
 }
 
+async function fetchFullInfo(url) {
+  if (isDouyinUrl(url)) return getDouyinInfo(url);
+  // XHS short links need extra time for redirect chain
+  if (isXiaohongshuUrl(url)) return fetchInfoViaYtDlp(url, 60000);
+  return fetchInfoViaYtDlp(url);
+}
+
 function refreshInfoInBackground(cacheKey, url) {
   if (infoRefreshInFlight.has(cacheKey)) return;
-  const p = fetchInfoViaYtDlp(url).then((payload) => {
+  const p = fetchFullInfo(url).then((payload) => {
     infoCache.set(cacheKey, {
       expiresAt: Date.now() + INFO_CACHE_TTL_MS,
       staleUntil: Date.now() + INFO_CACHE_TTL_MS + INFO_CACHE_STALE_MS,
@@ -601,6 +776,8 @@ app.get("/api/stream/:jobId", (req, res) => {
   const safeFormat = String(job.formatId || "best").replace(/[^a-zA-Z0-9+_-]/g, "");
   const args = [
     "--no-warnings",
+    "--user-agent",
+    YTDLP_USER_AGENT,
     "--no-playlist",
     "--newline",
     "-N",
@@ -617,6 +794,7 @@ app.get("/api/stream/:jobId", (req, res) => {
     args.push("-f", "best[ext=mp4][acodec!=none][vcodec!=none]/best[acodec!=none][vcodec!=none]/best");
   }
 
+  args.push(...ytDlpPlatformArgs(job.url));
   args.push(job.url);
 
   const proc = spawn("yt-dlp", args, { stdio: ["ignore", "pipe", "pipe"] });
@@ -625,8 +803,11 @@ app.get("/api/stream/:jobId", (req, res) => {
   }, 10 * 60 * 1000);
 
   let stderrBuf = "";
+  let stderrAll = "";
   proc.stderr.on("data", (chunk) => {
-    stderrBuf += chunk.toString();
+    const s = chunk.toString();
+    stderrBuf += s;
+    stderrAll += s;
     const lines = stderrBuf.split(/\r?\n/);
     stderrBuf = lines.pop();
     for (const line of lines) {
@@ -652,7 +833,8 @@ app.get("/api/stream/:jobId", (req, res) => {
   proc.on("close", (code) => {
     clearTimeout(killTimer);
     if (code !== 0) {
-      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      const errMsg = String(stderrAll || "").trim().slice(-800);
+      downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
       cleanupJob(jobId);
       streamJobs.delete(jobId);
       return;
@@ -674,10 +856,16 @@ app.post("/api/info", async (req, res) => {
   if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
   if (!isSupportedPlatform(url)) return res.status(400).json({ error: "Unsupported platform" });
 
-  // Douyin: use direct handler (no yt-dlp)
+  const cached = getCachedInfo(url);
+  if (cached) {
+    if (cached.isStale) refreshInfoInBackground(cached.key, url);
+    return res.json(cached.data);
+  }
+
   if (isDouyinUrl(url)) {
     try {
       const info = await getDouyinInfo(url);
+      setCachedInfo(url, info);
       return res.json(info);
     } catch (err) {
       console.error("[Douyin info]", err.message);
@@ -685,17 +873,47 @@ app.post("/api/info", async (req, res) => {
     }
   }
 
-  const cached = getCachedInfo(url);
-  if (cached) {
-    if (cached.isStale) refreshInfoInBackground(cached.key, url);
-    return res.json(cached.data);
+  // TikTok: respond quickly using oEmbed and refresh full info in background.
+  if (isTikTokUrl(url)) {
+    try {
+      const payload = await fetchTikTokOEmbed(url);
+      const cacheKey = setCachedInfo(url, payload);
+      refreshInfoInBackground(cacheKey, url);
+      return res.json(payload);
+    } catch (err) {
+      // Fall back to yt-dlp if oEmbed fails (rate-limit, network, etc.)
+      console.error("[TikTok oEmbed]", err && err.message ? err.message : err);
+    }
+  }
+
+  if (isYouTubeUrl(url)) {
+    try {
+      const payload = await fetchYouTubeOEmbed(url);
+      const cacheKey = setCachedInfo(url, payload);
+      refreshInfoInBackground(cacheKey, url);
+      return res.json(payload);
+    } catch (err) {
+      console.error("[YouTube oEmbed]", err && err.message ? err.message : err);
+    }
+  }
+
+  if (isFacebookUrl(url)) {
+    try {
+      const payload = await fetchFacebookMeta(url);
+      const cacheKey = setCachedInfo(url, payload);
+      refreshInfoInBackground(cacheKey, url);
+      return res.json(payload);
+    } catch (err) {
+      console.error("[Facebook meta]", err && err.message ? err.message : err);
+    }
   }
 
   try {
-    const payload = await fetchInfoViaYtDlp(url);
+    const payload = await fetchFullInfo(url);
     setCachedInfo(url, payload);
     return res.json(payload);
-  } catch {
+  } catch (err) {
+    console.error("[yt-dlp info]", err && err.message ? err.message : err);
     return res.status(500).json({ error: "Cannot fetch video info. Check URL." });
   }
 });
@@ -736,13 +954,15 @@ app.post("/api/download", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", YTDLP_FRAGMENT_CONCURRENCY, "-o", outTpl, "--merge-output-format", "mp4"];
+  const args = ["--no-warnings", "--user-agent", YTDLP_USER_AGENT, "--no-playlist", "--newline", "-N", YTDLP_FRAGMENT_CONCURRENCY, "-o", outTpl, "--merge-output-format", "mp4"];
   if (formatId && formatId !== "best") {
     const safeFormat = String(formatId).replace(/[^a-zA-Z0-9+_-]/g, "");
     args.push("-f", `${safeFormat}+bestaudio/best`);
   } else {
-    args.push("-f", "best[ext=mp4]/best");
+    // Prefer progressive A/V where available, else merge bestvideo+bestaudio, else any best.
+    args.push("-f", "best[ext=mp4][acodec!=none][vcodec!=none]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best");
   }
+  args.push(...ytDlpPlatformArgs(url));
   args.push(url);
 
   downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
@@ -752,11 +972,14 @@ app.post("/api/download", (req, res) => {
   const killTimer = setTimeout(() => {
     try { proc.kill("SIGKILL"); } catch {}
   }, 10 * 60 * 1000);
-  let stdoutBuf = "";
-  proc.stdout.on("data", (chunk) => {
-    stdoutBuf += chunk.toString();
-    const lines = stdoutBuf.split(/\r?\n/);
-    stdoutBuf = lines.pop();
+  let stderrBuf = "";
+  let stderrAll = "";
+  proc.stderr.on("data", (chunk) => {
+    const s = chunk.toString();
+    stderrBuf += s;
+    stderrAll += s;
+    const lines = stderrBuf.split(/\r?\n/);
+    stderrBuf = lines.pop();
     for (const line of lines) {
       const m = line.match(/(\d+\.?\d*)%/);
       if (m) {
@@ -774,13 +997,14 @@ app.post("/api/download", (req, res) => {
   proc.on("close", (code) => {
     clearTimeout(killTimer);
     if (code !== 0) {
-      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      const errMsg = String(stderrAll || "").trim().slice(-800);
+      downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
       cleanupJob(jobId);
       return;
     }
     const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId));
     if (!files.length) {
-      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      downloadJobs.set(jobId, { status: "error", percent: 0, error: "No output file generated" });
       cleanupJob(jobId);
       return;
     }
@@ -801,7 +1025,7 @@ app.post("/api/download-mp3", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", YTDLP_FRAGMENT_CONCURRENCY, "-o", outTpl, "-x", "--audio-format", "mp3", url];
+  const args = ["--no-warnings", "--user-agent", YTDLP_USER_AGENT, "--no-playlist", "--newline", "-N", YTDLP_FRAGMENT_CONCURRENCY, "-o", outTpl, "-x", "--audio-format", "mp3", ...ytDlpPlatformArgs(url), url];
 
   downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
   res.json({ jobId });
@@ -810,11 +1034,14 @@ app.post("/api/download-mp3", (req, res) => {
   const killTimer = setTimeout(() => {
     try { proc.kill("SIGKILL"); } catch {}
   }, 10 * 60 * 1000);
-  let stdoutBuf = "";
-  proc.stdout.on("data", (chunk) => {
-    stdoutBuf += chunk.toString();
-    const lines = stdoutBuf.split(/\r?\n/);
-    stdoutBuf = lines.pop();
+  let stderrBuf = "";
+  let stderrAll = "";
+  proc.stderr.on("data", (chunk) => {
+    const s = chunk.toString();
+    stderrBuf += s;
+    stderrAll += s;
+    const lines = stderrBuf.split(/\r?\n/);
+    stderrBuf = lines.pop();
     for (const line of lines) {
       const m = line.match(/(\d+\.?\d*)%/);
       if (m) {
@@ -832,7 +1059,8 @@ app.post("/api/download-mp3", (req, res) => {
   proc.on("close", (code) => {
     clearTimeout(killTimer);
     if (code !== 0) {
-      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      const errMsg = String(stderrAll || "").trim().slice(-800);
+      downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
       cleanupJob(jobId);
       return;
     }

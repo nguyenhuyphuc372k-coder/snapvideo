@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "bench:platforms": "node scripts/platform-benchmark.js"
   },
   "dependencies": {
     "compression": "^1.8.1",
