@@ -384,6 +384,42 @@ function refreshInfoInBackground(cacheKey, url) {
   infoRefreshInFlight.set(cacheKey, p);
 }
 
+// ===================== CONCURRENCY LIMITER (protect server from OOM) =====================
+const MAX_CONCURRENT_DOWNLOADS = parseInt(process.env.MAX_CONCURRENT_DOWNLOADS || "10", 10);
+const MAX_QUEUE_SIZE = parseInt(process.env.MAX_QUEUE_SIZE || "50", 10);
+const QUEUE_TIMEOUT_MS = parseInt(process.env.QUEUE_TIMEOUT_MS || "120000", 10); // 2min max wait in queue
+
+let activeDownloads = 0;
+const downloadQueue = [];
+
+function acquireSlot() {
+  return new Promise((resolve, reject) => {
+    if (activeDownloads < MAX_CONCURRENT_DOWNLOADS) {
+      activeDownloads++;
+      return resolve();
+    }
+    if (downloadQueue.length >= MAX_QUEUE_SIZE) {
+      return reject(new Error("Server is busy. Please try again in a moment."));
+    }
+    const timer = setTimeout(() => {
+      const idx = downloadQueue.findIndex(e => e.resolve === resolve);
+      if (idx !== -1) downloadQueue.splice(idx, 1);
+      reject(new Error("Download queue timeout. Please try again."));
+    }, QUEUE_TIMEOUT_MS);
+    downloadQueue.push({ resolve, reject, timer });
+  });
+}
+
+function releaseSlot() {
+  if (downloadQueue.length > 0) {
+    const next = downloadQueue.shift();
+    clearTimeout(next.timer);
+    next.resolve();
+  } else {
+    activeDownloads = Math.max(0, activeDownloads - 1);
+  }
+}
+
 // ===================== DOWNLOAD PROGRESS TRACKING =====================
 const downloadJobs = new Map();
 const streamJobs = new Map();
@@ -736,6 +772,18 @@ app.get("/api/ping", (req, res) => {
   res.json({ ok: true, ts: Date.now() });
 });
 
+// Server load stats (for monitoring)
+app.get("/api/stats", (req, res) => {
+  res.json({
+    activeDownloads,
+    queuedDownloads: downloadQueue.length,
+    maxConcurrent: MAX_CONCURRENT_DOWNLOADS,
+    maxQueue: MAX_QUEUE_SIZE,
+    uptime: Math.round(process.uptime()),
+    memMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
+  });
+});
+
 // ===================== STREAMING DOWNLOADS (MP4) =====================
 // Safer approach for multi-platform: add new endpoints and keep old file-based flow as fallback.
 app.post("/api/download-stream", (req, res) => {
@@ -761,12 +809,18 @@ app.post("/api/download-stream", (req, res) => {
   res.json({ jobId, streamUrl: `/api/stream/${jobId}`, filename: "video.mp4" });
 });
 
-app.get("/api/stream/:jobId", (req, res) => {
+app.get("/api/stream/:jobId", async (req, res) => {
   const jobId = req.params.jobId;
   const job = streamJobs.get(jobId);
   if (!job) return res.status(404).send("Stream job not found or expired");
   if (job.started) return res.status(409).send("Stream already started");
   job.started = true;
+
+  try { await acquireSlot(); } catch (e) {
+    downloadJobs.set(jobId, { status: "error", percent: 0, error: e.message });
+    cleanupJob(jobId); streamJobs.delete(jobId);
+    return res.status(503).send(e.message);
+  }
 
   res.setHeader("Content-Type", "application/octet-stream");
   res.setHeader("Content-Disposition", `attachment; filename="${job.mode === "mp4" ? "video.mp4" : "file"}"`);
@@ -832,6 +886,7 @@ app.get("/api/stream/:jobId", (req, res) => {
 
   proc.on("close", (code) => {
     clearTimeout(killTimer);
+    releaseSlot();
     if (code !== 0) {
       const errMsg = String(stderrAll || "").trim().slice(-800);
       downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
@@ -965,55 +1020,64 @@ app.post("/api/download", (req, res) => {
   args.push(...ytDlpPlatformArgs(url));
   args.push(url);
 
-  downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
+  downloadJobs.set(jobId, { status: "queued", percent: 0, speed: "", eta: "" });
   res.json({ jobId });
 
-  const proc = spawn("yt-dlp", args);
-  const killTimer = setTimeout(() => {
-    try { proc.kill("SIGKILL"); } catch {}
-  }, 10 * 60 * 1000);
-  let stderrBuf = "";
-  let stderrAll = "";
-  proc.stderr.on("data", (chunk) => {
-    const s = chunk.toString();
-    stderrBuf += s;
-    stderrAll += s;
-    const lines = stderrBuf.split(/\r?\n/);
-    stderrBuf = lines.pop();
-    for (const line of lines) {
-      const m = line.match(/(\d+\.?\d*)%/);
-      if (m) {
-        const job = downloadJobs.get(jobId);
-        if (job) {
-          job.percent = parseFloat(m[1]);
-          const sp = line.match(/at\s+([\d.]+\s*\S+\/s)/);
-          const et = line.match(/ETA\s+(\S+)/);
-          if (sp) job.speed = sp[1];
-          if (et) job.eta = et[1];
+  (async () => {
+    try { await acquireSlot(); } catch (e) {
+      downloadJobs.set(jobId, { status: "error", percent: 0, error: e.message });
+      cleanupJob(jobId); return;
+    }
+    downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
+
+    const proc = spawn("yt-dlp", args);
+    const killTimer = setTimeout(() => {
+      try { proc.kill("SIGKILL"); } catch {}
+    }, 10 * 60 * 1000);
+    let stderrBuf = "";
+    let stderrAll = "";
+    proc.stderr.on("data", (chunk) => {
+      const s = chunk.toString();
+      stderrBuf += s;
+      stderrAll += s;
+      const lines = stderrBuf.split(/\r?\n/);
+      stderrBuf = lines.pop();
+      for (const line of lines) {
+        const m = line.match(/(\d+\.?\d*)%/);
+        if (m) {
+          const job = downloadJobs.get(jobId);
+          if (job) {
+            job.percent = parseFloat(m[1]);
+            const sp = line.match(/at\s+([\d.]+\s*\S+\/s)/);
+            const et = line.match(/ETA\s+(\S+)/);
+            if (sp) job.speed = sp[1];
+            if (et) job.eta = et[1];
+          }
         }
       }
-    }
-  });
-  proc.on("close", (code) => {
-    clearTimeout(killTimer);
-    if (code !== 0) {
-      const errMsg = String(stderrAll || "").trim().slice(-800);
-      downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
+    });
+    proc.on("close", (code) => {
+      clearTimeout(killTimer);
+      releaseSlot();
+      if (code !== 0) {
+        const errMsg = String(stderrAll || "").trim().slice(-800);
+        downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
+        cleanupJob(jobId);
+        return;
+      }
+      const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId));
+      if (!files.length) {
+        downloadJobs.set(jobId, { status: "error", percent: 0, error: "No output file generated" });
+        cleanupJob(jobId);
+        return;
+      }
+      const filePath = path.join(DOWNLOAD_DIR, files[0]);
+      const ext = path.extname(files[0]);
+      downloadJobs.set(jobId, { status: "done", percent: 100, downloadUrl: `/api/file/${fileId}${ext}`, filename: `video${ext}` });
+      autoDeleteFile(filePath);
       cleanupJob(jobId);
-      return;
-    }
-    const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId));
-    if (!files.length) {
-      downloadJobs.set(jobId, { status: "error", percent: 0, error: "No output file generated" });
-      cleanupJob(jobId);
-      return;
-    }
-    const filePath = path.join(DOWNLOAD_DIR, files[0]);
-    const ext = path.extname(files[0]);
-    downloadJobs.set(jobId, { status: "done", percent: 100, downloadUrl: `/api/file/${fileId}${ext}`, filename: `video${ext}` });
-    autoDeleteFile(filePath);
-    cleanupJob(jobId);
-  });
+    });
+  })();
 });
 
 // Download MP3 (audio extraction)
@@ -1027,55 +1091,64 @@ app.post("/api/download-mp3", (req, res) => {
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
   const args = ["--no-warnings", "--user-agent", YTDLP_USER_AGENT, "--no-playlist", "--newline", "-N", YTDLP_FRAGMENT_CONCURRENCY, "-o", outTpl, "-x", "--audio-format", "mp3", ...ytDlpPlatformArgs(url), url];
 
-  downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
+  downloadJobs.set(jobId, { status: "queued", percent: 0, speed: "", eta: "" });
   res.json({ jobId });
 
-  const proc = spawn("yt-dlp", args);
-  const killTimer = setTimeout(() => {
-    try { proc.kill("SIGKILL"); } catch {}
-  }, 10 * 60 * 1000);
-  let stderrBuf = "";
-  let stderrAll = "";
-  proc.stderr.on("data", (chunk) => {
-    const s = chunk.toString();
-    stderrBuf += s;
-    stderrAll += s;
-    const lines = stderrBuf.split(/\r?\n/);
-    stderrBuf = lines.pop();
-    for (const line of lines) {
-      const m = line.match(/(\d+\.?\d*)%/);
-      if (m) {
-        const job = downloadJobs.get(jobId);
-        if (job) {
-          job.percent = parseFloat(m[1]);
-          const sp = line.match(/at\s+([\d.]+\s*\S+\/s)/);
-          const et = line.match(/ETA\s+(\S+)/);
-          if (sp) job.speed = sp[1];
-          if (et) job.eta = et[1];
+  (async () => {
+    try { await acquireSlot(); } catch (e) {
+      downloadJobs.set(jobId, { status: "error", percent: 0, error: e.message });
+      cleanupJob(jobId); return;
+    }
+    downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
+
+    const proc = spawn("yt-dlp", args);
+    const killTimer = setTimeout(() => {
+      try { proc.kill("SIGKILL"); } catch {}
+    }, 10 * 60 * 1000);
+    let stderrBuf = "";
+    let stderrAll = "";
+    proc.stderr.on("data", (chunk) => {
+      const s = chunk.toString();
+      stderrBuf += s;
+      stderrAll += s;
+      const lines = stderrBuf.split(/\r?\n/);
+      stderrBuf = lines.pop();
+      for (const line of lines) {
+        const m = line.match(/(\d+\.?\d*)%/);
+        if (m) {
+          const job = downloadJobs.get(jobId);
+          if (job) {
+            job.percent = parseFloat(m[1]);
+            const sp = line.match(/at\s+([\d.]+\s*\S+\/s)/);
+            const et = line.match(/ETA\s+(\S+)/);
+            if (sp) job.speed = sp[1];
+            if (et) job.eta = et[1];
+          }
         }
       }
-    }
-  });
-  proc.on("close", (code) => {
-    clearTimeout(killTimer);
-    if (code !== 0) {
-      const errMsg = String(stderrAll || "").trim().slice(-800);
-      downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
+    });
+    proc.on("close", (code) => {
+      clearTimeout(killTimer);
+      releaseSlot();
+      if (code !== 0) {
+        const errMsg = String(stderrAll || "").trim().slice(-800);
+        downloadJobs.set(jobId, { status: "error", percent: 0, error: errMsg || "yt-dlp failed" });
+        cleanupJob(jobId);
+        return;
+      }
+      const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId));
+      if (!files.length) {
+        downloadJobs.set(jobId, { status: "error", percent: 0 });
+        cleanupJob(jobId);
+        return;
+      }
+      const filePath = path.join(DOWNLOAD_DIR, files[0]);
+      const ext = path.extname(files[0]);
+      downloadJobs.set(jobId, { status: "done", percent: 100, downloadUrl: `/api/file/${fileId}${ext}`, filename: `audio${ext}` });
+      autoDeleteFile(filePath);
       cleanupJob(jobId);
-      return;
-    }
-    const files = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith(fileId));
-    if (!files.length) {
-      downloadJobs.set(jobId, { status: "error", percent: 0 });
-      cleanupJob(jobId);
-      return;
-    }
-    const filePath = path.join(DOWNLOAD_DIR, files[0]);
-    const ext = path.extname(files[0]);
-    downloadJobs.set(jobId, { status: "done", percent: 100, downloadUrl: `/api/file/${fileId}${ext}`, filename: `audio${ext}` });
-    autoDeleteFile(filePath);
-    cleanupJob(jobId);
-  });
+    });
+  })();
 });
 
 // Thumbnail fetch
