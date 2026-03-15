@@ -102,7 +102,11 @@ const { getDouyinInfo, downloadDouyinVideo, isDouyinUrl } = require("./douyin-ha
 
 // ===================== INFO CACHE (speed up repeated pastes) =====================
 const INFO_CACHE_TTL_MS = parseInt(process.env.INFO_CACHE_TTL_MS || "600000", 10); // 10 min
+const INFO_CACHE_STALE_MS = parseInt(process.env.INFO_CACHE_STALE_MS || String(24 * 60 * 60 * 1000), 10); // 24h
 const infoCache = new Map();
+const infoRefreshInFlight = new Map();
+
+const YTDLP_FRAGMENT_CONCURRENCY = String(process.env.YTDLP_FRAGMENT_CONCURRENCY || "8");
 
 function normalizeInfoCacheKey(urlStr) {
   try {
@@ -122,16 +126,82 @@ function getCachedInfo(urlStr) {
   const key = normalizeInfoCacheKey(urlStr);
   const entry = infoCache.get(key);
   if (!entry) return null;
-  if (entry.expiresAt <= Date.now()) {
-    infoCache.delete(key);
-    return null;
+  const now = Date.now();
+  if (entry.expiresAt > now) {
+    return { data: entry.data, isStale: false, key };
   }
-  return entry.data;
+  if (entry.staleUntil > now) {
+    return { data: entry.data, isStale: true, key };
+  }
+  infoCache.delete(key);
+  return null;
 }
 
 function setCachedInfo(urlStr, data) {
   const key = normalizeInfoCacheKey(urlStr);
-  infoCache.set(key, { expiresAt: Date.now() + INFO_CACHE_TTL_MS, data });
+  const now = Date.now();
+  infoCache.set(key, { expiresAt: now + INFO_CACHE_TTL_MS, staleUntil: now + INFO_CACHE_TTL_MS + INFO_CACHE_STALE_MS, data });
+  return key;
+}
+
+function buildInfoPayload(info) {
+  let formats = (info.formats || [])
+    .filter(f => f.vcodec !== "none" && f.acodec !== "none" && f.url)
+    .map(f => ({
+      formatId: f.format_id,
+      ext: f.ext,
+      resolution: f.resolution || `${f.width || "?"}x${f.height || "?"}`,
+      height: f.height || 0,
+      filesize: f.filesize || f.filesize_approx || null,
+      quality: f.format_note || f.quality || "",
+    }));
+  formats.sort((a, b) => b.height - a.height);
+  const seen = new Set();
+  formats = formats.filter(f => { if (seen.has(f.resolution)) return false; seen.add(f.resolution); return true; });
+  formats = formats.map(({ height, ...r }) => r);
+  return {
+    title: info.title || "Video",
+    thumbnail: info.thumbnail || null,
+    duration: info.duration || null,
+    uploader: info.uploader || info.channel || "",
+    platform: info.extractor_key || info.extractor || "",
+    formats: formats.length ? formats : [{ formatId: "best", ext: "mp4", resolution: "Best", quality: "best" }],
+  };
+}
+
+function fetchInfoViaYtDlp(url, timeoutMs = 30000) {
+  return new Promise((resolve, reject) => {
+    execFile(
+      "yt-dlp",
+      ["--no-warnings", "--dump-json", "--no-playlist", url],
+      { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
+      (err, stdout) => {
+        if (err) return reject(err);
+        try {
+          const info = JSON.parse(stdout);
+          resolve(buildInfoPayload(info));
+        } catch (e) {
+          reject(e);
+        }
+      }
+    );
+  });
+}
+
+function refreshInfoInBackground(cacheKey, url) {
+  if (infoRefreshInFlight.has(cacheKey)) return;
+  const p = fetchInfoViaYtDlp(url).then((payload) => {
+    infoCache.set(cacheKey, {
+      expiresAt: Date.now() + INFO_CACHE_TTL_MS,
+      staleUntil: Date.now() + INFO_CACHE_TTL_MS + INFO_CACHE_STALE_MS,
+      data: payload,
+    });
+  }).catch(() => {
+    // keep stale cache if refresh fails
+  }).finally(() => {
+    infoRefreshInFlight.delete(cacheKey);
+  });
+  infoRefreshInFlight.set(cacheKey, p);
 }
 
 // ===================== DOWNLOAD PROGRESS TRACKING =====================
@@ -499,38 +569,18 @@ app.post("/api/info", async (req, res) => {
   }
 
   const cached = getCachedInfo(url);
-  if (cached) return res.json(cached);
+  if (cached) {
+    if (cached.isStale) refreshInfoInBackground(cached.key, url);
+    return res.json(cached.data);
+  }
 
-  execFile("yt-dlp", ["--no-warnings", "--dump-json", "--no-playlist", url],
-    { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
-    if (err) {
-      return res.status(500).json({ error: "Cannot fetch video info. Check URL." });
-    }
-    try {
-      const info = JSON.parse(stdout);
-      let formats = (info.formats || [])
-        .filter(f => f.vcodec !== "none" && f.acodec !== "none" && f.url)
-        .map(f => ({
-          formatId: f.format_id, ext: f.ext,
-          resolution: f.resolution || `${f.width || "?"}x${f.height || "?"}`,
-          height: f.height || 0,
-          filesize: f.filesize || f.filesize_approx || null,
-          quality: f.format_note || f.quality || "",
-        }));
-      formats.sort((a, b) => b.height - a.height);
-      const seen = new Set();
-      formats = formats.filter(f => { if (seen.has(f.resolution)) return false; seen.add(f.resolution); return true; });
-      formats = formats.map(({ height, ...r }) => r);
-      const payload = {
-        title: info.title || "Video", thumbnail: info.thumbnail || null,
-        duration: info.duration || null, uploader: info.uploader || info.channel || "",
-        platform: info.extractor_key || info.extractor || "",
-        formats: formats.length ? formats : [{ formatId: "best", ext: "mp4", resolution: "Best", quality: "best" }],
-      };
-      setCachedInfo(url, payload);
-      res.json(payload);
-    } catch { res.status(500).json({ error: "Failed to parse video info" }); }
-  });
+  try {
+    const payload = await fetchInfoViaYtDlp(url);
+    setCachedInfo(url, payload);
+    return res.json(payload);
+  } catch {
+    return res.status(500).json({ error: "Cannot fetch video info. Check URL." });
+  }
 });
 
 // Download video (MP4)
@@ -569,7 +619,7 @@ app.post("/api/download", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", "4", "-o", outTpl, "--merge-output-format", "mp4"];
+  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", YTDLP_FRAGMENT_CONCURRENCY, "-o", outTpl, "--merge-output-format", "mp4"];
   if (formatId && formatId !== "best") {
     const safeFormat = String(formatId).replace(/[^a-zA-Z0-9+_-]/g, "");
     args.push("-f", `${safeFormat}+bestaudio/best`);
@@ -634,7 +684,7 @@ app.post("/api/download-mp3", (req, res) => {
   const fileId = uuidv4();
   const jobId = uuidv4();
   const outTpl = path.join(DOWNLOAD_DIR, `${fileId}.%(ext)s`);
-  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", "4", "-o", outTpl, "-x", "--audio-format", "mp3", url];
+  const args = ["--no-warnings", "--no-playlist", "--newline", "-N", YTDLP_FRAGMENT_CONCURRENCY, "-o", outTpl, "-x", "--audio-format", "mp3", url];
 
   downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
   res.json({ jobId });
