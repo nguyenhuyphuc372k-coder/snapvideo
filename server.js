@@ -166,6 +166,15 @@ app.get("/", (req, res) => {
     description: "Free online tool to download videos from TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin without watermark.",
     canonical: BASE_URL + "/",
     latestPosts: posts.slice(0, 3),
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "SnapClip",
+      operatingSystem: "Any",
+      applicationCategory: "MultimediaApplication",
+      url: BASE_URL + "/",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
   }));
 });
 
@@ -176,6 +185,16 @@ app.get("/vi", (req, res) => {
     description: "C\u00F4ng c\u1EE5 tr\u1EF1c tuy\u1EBFn mi\u1EC5n ph\u00ED t\u1EA3i video t\u1EEB TikTok, YouTube, Facebook, Instagram, Bilibili, Twitter, Xiaohongshu, Douyin kh\u00F4ng watermark.",
     canonical: BASE_URL + "/vi/",
     latestPosts: posts.slice(0, 3),
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "SnapClip",
+      operatingSystem: "Any",
+      applicationCategory: "MultimediaApplication",
+      url: BASE_URL + "/vi/",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      inLanguage: "vi",
+    },
   }));
 });
 
@@ -197,6 +216,21 @@ const platformRoutes = {
   "/xiaohongshu-video-downloader": "xiaohongshu",
   "/douyin-video-downloader": "douyin",
 };
+
+// Common SEO aliases -> canonical landing pages
+const platformAliasRedirects = {
+  "/facebook-downloader": "/facebook-video-downloader",
+  "/twitter-downloader": "/twitter-video-downloader",
+  "/x-downloader": "/twitter-video-downloader",
+  "/bilibili-downloader": "/bilibili-video-downloader",
+  "/xiaohongshu-downloader": "/xiaohongshu-video-downloader",
+  "/rednote-downloader": "/xiaohongshu-video-downloader",
+  "/douyin-downloader": "/douyin-video-downloader",
+};
+
+Object.entries(platformAliasRedirects).forEach(([from, to]) => {
+  dualRoute(from, (req, res) => res.redirect(301, req.langPrefix + to));
+});
 
 Object.entries(platformRoutes).forEach(([route, key]) => {
   dualRoute(route, (req, res) => {
@@ -303,12 +337,32 @@ dualRoute("/blog/:slug", (req, res) => {
     }));
   }
   const relatedPosts = posts.filter(p => p.slug !== post.slug).slice(0, 3);
+  const canonicalUrl = BASE_URL + req.langPrefix + "/blog/" + post.slug;
+  const parsedDate = new Date(post.date);
+  const isoDate = isNaN(parsedDate) ? null : parsedDate.toISOString();
   res.render("blog/post", tplVars(req, {
     title: post.title + " \u2013 SnapClip",
     description: post.excerpt,
-    canonical: BASE_URL + req.langPrefix + "/blog/" + post.slug,
+    canonical: canonicalUrl,
     post,
     relatedPosts,
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: post.excerpt,
+      url: canonicalUrl,
+      mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+      datePublished: isoDate || undefined,
+      dateModified: isoDate || undefined,
+      author: { "@type": "Organization", name: "SnapClip" },
+      publisher: {
+        "@type": "Organization",
+        name: "SnapClip",
+        logo: { "@type": "ImageObject", url: BASE_URL + "/images/og-default.png" },
+      },
+      inLanguage: req.lang,
+    },
   }));
 });
 
