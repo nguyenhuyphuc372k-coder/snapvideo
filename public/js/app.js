@@ -163,6 +163,34 @@ async function downloadVideo() {
 
   const endpoint = downloadMode === 'mp3' ? '/api/download-mp3' : '/api/download';
   try {
+    // Prefer streaming for MP4 (faster perceived speed). Fall back to legacy file-based flow.
+    if (downloadMode === 'mp4') {
+      try {
+        const sres = await fetch('/api/download-stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: currentUrl, formatId: selectedFormat })
+        });
+        const sdata = await sres.json();
+        if (sres.ok && sdata.streamUrl && sdata.jobId) {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = sdata.streamUrl;
+          document.body.appendChild(iframe);
+          // Cleanup iframe after a bit
+          setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 30000);
+
+          await pollProgress(sdata.jobId);
+          hideProgress();
+          setStatus(T.statusDownloadStarted || 'Download started ✓', false, true);
+          if (btn) btn.disabled = false;
+          return;
+        }
+      } catch {
+        // streaming attempt failed -> fallback
+      }
+    }
+
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

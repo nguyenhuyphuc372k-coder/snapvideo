@@ -19,7 +19,12 @@ const BASE_URL = process.env.BASE_URL || "https://snapclip.pro";
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-app.use(compression());
+app.use(compression({
+  filter: (req, res) => {
+    if (req.path && req.path.startsWith("/api/stream/")) return false;
+    return compression.filter(req, res);
+  },
+}));
 app.use(cors());
 app.use(express.json());
 
@@ -206,9 +211,14 @@ function refreshInfoInBackground(cacheKey, url) {
 
 // ===================== DOWNLOAD PROGRESS TRACKING =====================
 const downloadJobs = new Map();
+const streamJobs = new Map();
 
 function cleanupJob(jobId, delayMs = 120000) {
   setTimeout(() => downloadJobs.delete(jobId), delayMs);
+}
+
+function cleanupStreamJob(jobId, delayMs = 15 * 60 * 1000) {
+  setTimeout(() => streamJobs.delete(jobId), delayMs);
 }
 
 app.get("/api/progress/:jobId", (req, res) => {
@@ -549,6 +559,113 @@ app.use(express.static(path.join(__dirname, "public"), {
 // Warm-up endpoint (helps reduce Render cold-start impact)
 app.get("/api/ping", (req, res) => {
   res.json({ ok: true, ts: Date.now() });
+});
+
+// ===================== STREAMING DOWNLOADS (MP4) =====================
+// Safer approach for multi-platform: add new endpoints and keep old file-based flow as fallback.
+app.post("/api/download-stream", (req, res) => {
+  const { url, formatId } = req.body;
+  if (!url || !isValidUrl(url)) return res.status(400).json({ error: "Invalid URL" });
+  if (!isSupportedPlatform(url)) return res.status(400).json({ error: "Unsupported platform" });
+
+  // Douyin: keep existing file-based approach for now (streaming not implemented)
+  if (isDouyinUrl(url)) return res.status(400).json({ error: "Streaming is not available for this platform yet." });
+
+  const jobId = uuidv4();
+  streamJobs.set(jobId, {
+    mode: "mp4",
+    url,
+    formatId: formatId || "best",
+    started: false,
+    createdAt: Date.now(),
+  });
+
+  downloadJobs.set(jobId, { status: "downloading", percent: 0, speed: "", eta: "" });
+  cleanupStreamJob(jobId);
+
+  res.json({ jobId, streamUrl: `/api/stream/${jobId}`, filename: "video.mp4" });
+});
+
+app.get("/api/stream/:jobId", (req, res) => {
+  const jobId = req.params.jobId;
+  const job = streamJobs.get(jobId);
+  if (!job) return res.status(404).send("Stream job not found or expired");
+  if (job.started) return res.status(409).send("Stream already started");
+  job.started = true;
+
+  res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader("Content-Disposition", `attachment; filename="${job.mode === "mp4" ? "video.mp4" : "file"}"`);
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  const safeFormat = String(job.formatId || "best").replace(/[^a-zA-Z0-9+_-]/g, "");
+  const args = [
+    "--no-warnings",
+    "--no-playlist",
+    "--newline",
+    "-N",
+    YTDLP_FRAGMENT_CONCURRENCY,
+    "-o",
+    "-",
+  ];
+
+  if (safeFormat && safeFormat !== "best") {
+    // Our /api/info only exposes formats that already have audio+video.
+    args.push("-f", safeFormat);
+  } else {
+    // Prefer progressive A/V formats to keep streaming reliable.
+    args.push("-f", "best[ext=mp4][acodec!=none][vcodec!=none]/best[acodec!=none][vcodec!=none]/best");
+  }
+
+  args.push(job.url);
+
+  const proc = spawn("yt-dlp", args, { stdio: ["ignore", "pipe", "pipe"] });
+  const killTimer = setTimeout(() => {
+    try { proc.kill("SIGKILL"); } catch {}
+  }, 10 * 60 * 1000);
+
+  let stderrBuf = "";
+  proc.stderr.on("data", (chunk) => {
+    stderrBuf += chunk.toString();
+    const lines = stderrBuf.split(/\r?\n/);
+    stderrBuf = lines.pop();
+    for (const line of lines) {
+      const m = line.match(/(\d+\.?\d*)%/);
+      if (m) {
+        const st = downloadJobs.get(jobId);
+        if (st) {
+          st.percent = parseFloat(m[1]);
+          const sp = line.match(/at\s+([\d.]+\s*\S+\/s)/);
+          const et = line.match(/ETA\s+(\S+)/);
+          if (sp) st.speed = sp[1];
+          if (et) st.eta = et[1];
+        }
+      }
+    }
+  });
+
+  res.on("close", () => {
+    clearTimeout(killTimer);
+    try { proc.kill("SIGKILL"); } catch {}
+  });
+
+  proc.on("close", (code) => {
+    clearTimeout(killTimer);
+    if (code !== 0) {
+      downloadJobs.set(jobId, { status: "error", percent: 0 });
+      cleanupJob(jobId);
+      streamJobs.delete(jobId);
+      return;
+    }
+    downloadJobs.set(jobId, { status: "done", percent: 100, filename: "video.mp4" });
+    cleanupJob(jobId);
+    streamJobs.delete(jobId);
+  });
+
+  proc.stdout.on("error", () => {
+    try { res.destroy(); } catch {}
+  });
+  proc.stdout.pipe(res);
 });
 
 // Get video info
