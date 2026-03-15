@@ -2,6 +2,11 @@
 <%- include('partials/header') %>
 
 <div class="container-sm">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="<%= langPrefix %>/"><%= t.navHome || 'Home' %></a> <span>&rsaquo;</span>
+    <a href="<%= langPrefix %>/tools"><%= t.navTools %></a> <span>&rsaquo;</span>
+    <span><%= platform.name %></span>
+  </nav>
   <div class="page-header">
     <h1><%= platform.title %></h1>
     <p><%= platform.description %></p>
@@ -91,12 +96,23 @@
 </div>
 <% } %>
 
+<% if (platform.seoContent) { %>
+<div class="section">
+  <div class="container-sm seo-content">
+    <%- platform.seoContent %>
+  </div>
+</div>
+<% } %>
+
 <%- include('partials/ad-multiplex') %>
 <div class="section">
   <div class="container">
     <h2 style="text-align:center"><%= t.relatedTools %></h2>
     <div class="tools-grid" style="margin-top:16px">
+      <a class="tool-card" href="<%= langPrefix %>/tiktok-downloader"><h3><%= t.tiktokTitle %></h3><p><%= t.tiktokDesc %></p></a>
       <a class="tool-card" href="<%= langPrefix %>/youtube-downloader"><h3><%= t.youtubeTitle %></h3><p><%= t.youtubeDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/instagram-downloader"><h3><%= t.instagramTitle %></h3><p><%= t.instagramDesc %></p></a>
+      <a class="tool-card" href="<%= langPrefix %>/facebook-video-downloader"><h3><%= t.facebookTitle %></h3><p><%= t.facebookDesc %></p></a>
       <a class="tool-card" href="<%= langPrefix %>/mp4-to-mp3"><h3><%= t.mp4ToMp3Title %></h3><p><%= t.mp4ToMp3Desc %></p></a>
       <a class="tool-card" href="<%= langPrefix %>/video-trimmer"><h3><%= t.trimmerTitle %></h3><p><%= t.trimmerDesc %></p></a>
     </div>

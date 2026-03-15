@@ -38,6 +38,8 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5262734754559750" crossorigin="anonymous"></script>
   <script>window.T = <%- JSON.stringify({statusFetching:t.statusFetching,statusProcessing:t.statusProcessing,statusError:t.statusError,statusDownloadStarted:t.statusDownloadStarted,statusConnectionError:t.statusConnectionError,statusPleaseUrl:t.statusPleaseUrl,statusSelectFile:t.statusSelectFile,statusUploadVideo:t.statusUploadVideo,statusSetEndTime:t.statusSetEndTime,quality:t.quality,btnDownload:t.btnDownload,btnGetVideo:t.btnGetVideo,noSubsFound:t.noSubsFound,downloadSrt:t.downloadSrt}) %></script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"SnapClip","url":"<%= BASE_URL %>","potentialAction":{"@type":"SearchAction","target":"<%= BASE_URL %>/tools","query-input":"required name=search_term_string"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"SnapClip","url":"<%= BASE_URL %>","logo":"<%= BASE_URL %>/images/icon-512x512.png","sameAs":[]}</script>
+  <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %><script type="application/ld+json"><%- JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":breadcrumbs.map(function(b,i){var item={"@type":"ListItem","position":i+1,"name":b.name};if(b.url)item.item=b.url;return item;})}) %></script><% } %>
   <% if (typeof jsonLd !== 'undefined' && jsonLd) { %>
     <% if (Array.isArray(jsonLd)) { %>
       <% jsonLd.forEach(function(schema){ %><script type="application/ld+json"><%- JSON.stringify(schema) %></script><% }) %>

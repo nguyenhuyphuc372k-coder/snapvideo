@@ -532,6 +532,11 @@ Object.entries(platformRoutes).forEach(([route, key]) => {
       canonical: BASE_URL + req.langPrefix + route,
       platform: p,
       faqSchema: p.faq,
+      breadcrumbs: [
+        { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
+        { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
+        { name: p.name },
+      ],
     }));
   });
 });
@@ -548,6 +553,11 @@ dualRoute("/youtube-downloader", (req, res) => {
     description: req.t.ytPageDesc,
     canonical: BASE_URL + req.langPrefix + "/youtube-downloader",
     faqSchema: ytFaq,
+    breadcrumbs: [
+      { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
+      { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
+      { name: "YouTube" },
+    ],
   }));
 });
 
@@ -557,28 +567,45 @@ dualRoute("/youtube-thumbnail-downloader", (req, res) => {
     description: req.t.thumbPageDesc,
     canonical: BASE_URL + req.langPrefix + "/youtube-thumbnail-downloader",
     faqSchema: [{q:req.t.thumbFaq1Q,a:req.t.thumbFaq1A},{q:req.t.thumbFaq2Q,a:req.t.thumbFaq2A}],
+    breadcrumbs: [
+      { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
+      { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
+      { name: req.t.thumbnailTitle },
+    ],
   }));
 });
 
 dualRoute("/mp4-to-mp3", (req, res) => {
+  const pTitle = req.t.mp4ToMp3Title || "MP4 to MP3 Converter";
   res.render("converter", tplVars(req, {
-    title: (req.t.mp4ToMp3Title || "MP4 to MP3 Converter") + " \u2013 SnapClip",
+    title: pTitle + " \u2013 SnapClip",
     description: req.t.mp4ToMp3Desc || "Convert MP4 video to MP3 audio. Paste a URL or upload a file.",
     canonical: BASE_URL + req.langPrefix + "/mp4-to-mp3",
-    pageTitle: req.t.mp4ToMp3Title || "MP4 to MP3 Converter",
+    pageTitle: pTitle,
     pageDesc: req.t.mp4ToMp3Desc || "Convert any video to MP3 audio. Paste a video URL or upload a file.",
     faqSchema: [{q:req.t.converterFaq1Q,a:req.t.converterFaq1A},{q:req.t.converterFaq2Q,a:req.t.converterFaq2A},{q:req.t.converterFaq3Q,a:req.t.converterFaq3A}],
+    breadcrumbs: [
+      { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
+      { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
+      { name: pTitle },
+    ],
   }));
 });
 
 dualRoute("/video-to-audio", (req, res) => {
+  const pTitle = req.t.videoToAudioTitle || "Video to Audio Converter";
   res.render("converter", tplVars(req, {
-    title: (req.t.videoToAudioTitle || "Video to Audio Converter") + " \u2013 SnapClip",
+    title: pTitle + " \u2013 SnapClip",
     description: req.t.videoToAudioDesc || "Extract audio from any video. Supports URL and file upload.",
     canonical: BASE_URL + req.langPrefix + "/video-to-audio",
-    pageTitle: req.t.videoToAudioTitle || "Video to Audio Converter",
+    pageTitle: pTitle,
     pageDesc: req.t.videoToAudioDesc || "Extract audio from any video. Paste a URL or upload a video file.",
     faqSchema: [{q:req.t.converterFaq1Q,a:req.t.converterFaq1A},{q:req.t.converterFaq2Q,a:req.t.converterFaq2A},{q:req.t.converterFaq3Q,a:req.t.converterFaq3A}],
+    breadcrumbs: [
+      { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
+      { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
+      { name: pTitle },
+    ],
   }));
 });
 
@@ -588,6 +615,11 @@ dualRoute("/subtitle-downloader", (req, res) => {
     description: req.t.subtitlePageDesc,
     canonical: BASE_URL + req.langPrefix + "/subtitle-downloader",
     faqSchema: [{q:req.t.subFaq1Q,a:req.t.subFaq1A},{q:req.t.subFaq2Q,a:req.t.subFaq2A}],
+    breadcrumbs: [
+      { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
+      { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
+      { name: req.t.subtitleTitle },
+    ],
   }));
 });
 
@@ -597,6 +629,11 @@ dualRoute("/video-trimmer", (req, res) => {
     description: req.t.trimmerPageDesc,
     canonical: BASE_URL + req.langPrefix + "/video-trimmer",
     faqSchema: [{q:req.t.trimFaq1Q,a:req.t.trimFaq1A},{q:req.t.trimFaq2Q,a:req.t.trimFaq2A},{q:req.t.trimFaq3Q,a:req.t.trimFaq3A}],
+    breadcrumbs: [
+      { name: req.t.navHome || "Home", url: BASE_URL + req.langPrefix + "/" },
+      { name: req.t.navTools, url: BASE_URL + req.langPrefix + "/tools" },
+      { name: req.t.trimmerTitle },
+    ],
   }));
 });
 

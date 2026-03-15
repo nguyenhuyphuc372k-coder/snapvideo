@@ -4,15 +4,31 @@
     <div class="footer-inner">
       <div class="footer-links">
         <div class="footer-group">
+          <strong><%= t.videoDownloaders || 'Video Downloaders' %></strong>
+          <a href="<%= langPrefix %>/tiktok-downloader">TikTok</a>
+          <a href="<%= langPrefix %>/youtube-downloader">YouTube</a>
+          <a href="<%= langPrefix %>/instagram-downloader">Instagram</a>
+          <a href="<%= langPrefix %>/facebook-video-downloader">Facebook</a>
+          <a href="<%= langPrefix %>/twitter-video-downloader">Twitter/X</a>
+          <a href="<%= langPrefix %>/xiaohongshu-video-downloader">Xiaohongshu</a>
+          <a href="<%= langPrefix %>/douyin-video-downloader">Douyin</a>
+          <a href="<%= langPrefix %>/bilibili-video-downloader">Bilibili</a>
+        </div>
+        <div class="footer-group">
+          <strong><%= t.conversionTools || 'Tools' %></strong>
           <a href="<%= langPrefix %>/tools"><%= t.navTools %></a>
+          <a href="<%= langPrefix %>/mp4-to-mp3"><%= t.mp4ToMp3Title %></a>
+          <a href="<%= langPrefix %>/youtube-thumbnail-downloader"><%= t.thumbnailTitle %></a>
+          <a href="<%= langPrefix %>/subtitle-downloader"><%= t.subtitleTitle %></a>
+          <a href="<%= langPrefix %>/video-trimmer"><%= t.trimmerTitle %></a>
+        </div>
+        <div class="footer-group">
+          <strong><%= t.navHome || 'SnapClip' %></strong>
           <a href="<%= langPrefix %>/blog"><%= t.navBlog %></a>
           <a href="<%= langPrefix %>/faq"><%= t.navFaq %></a>
           <a href="<%= langPrefix %>/contact"><%= t.navContact %></a>
-        </div>
-        <div class="footer-group">
           <a href="<%= langPrefix %>/privacy-policy"><%= t.privacyPolicy %></a>
           <a href="<%= langPrefix %>/terms-of-service"><%= t.termsOfService %></a>
-          <a href="<%= langPrefix %>/disclaimer"><%= t.disclaimer %></a>
           <a href="<%= langPrefix %>/dmca"><%= t.dmca %></a>
         </div>
       </div>

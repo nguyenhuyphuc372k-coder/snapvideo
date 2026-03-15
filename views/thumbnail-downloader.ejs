@@ -2,6 +2,11 @@
 <%- include('partials/header') %>
 
 <div class="container-sm">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="<%= langPrefix %>/"><%= t.navHome || 'Home' %></a> <span>&rsaquo;</span>
+    <a href="<%= langPrefix %>/tools"><%= t.navTools %></a> <span>&rsaquo;</span>
+    <span><%= t.thumbnailTitle %></span>
+  </nav>
   <div class="page-header">
     <h1><%= t.thumbPageTitle %></h1>
     <p><%= t.thumbPageDesc %></p>
