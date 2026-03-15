@@ -1,4 +1,5 @@
 const express = require("express");
+const compression = require("compression");
 const cors = require("cors");
 const multer = require("multer");
 const { execFile, spawn } = require("child_process");
@@ -18,6 +19,7 @@ const BASE_URL = process.env.BASE_URL || "https://snapclip.pro";
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 
@@ -392,20 +394,20 @@ app.get("/sitemap.xml", (req, res) => {
   corePages.forEach(pg => {
     const enUrl = BASE_URL + pg.path;
     const viUrl = BASE_URL + "/vi" + pg.path;
-    xml += `  <url><loc>${enUrl}</loc><lastmod>${today}</lastmod><changefreq>${pg.changefreq}</changefreq><priority>${pg.priority}</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
-    xml += `  <url><loc>${viUrl}</loc><lastmod>${today}</lastmod><changefreq>${pg.changefreq}</changefreq><priority>${pg.priority}</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
+    xml += `  <url><loc>${enUrl}</loc><lastmod>${today}</lastmod><changefreq>${pg.changefreq}</changefreq><priority>${pg.priority}</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/><xhtml:link rel="alternate" hreflang="x-default" href="${enUrl}"/></url>\n`;
+    xml += `  <url><loc>${viUrl}</loc><lastmod>${today}</lastmod><changefreq>${pg.changefreq}</changefreq><priority>${pg.priority}</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/><xhtml:link rel="alternate" hreflang="x-default" href="${enUrl}"/></url>\n`;
   });
 
   enPosts.forEach(p => {
     const enUrl = BASE_URL + "/blog/" + p.slug;
     const viUrl = BASE_URL + "/vi/blog/" + p.slug;
-    xml += `  <url><loc>${enUrl}</loc><lastmod>${toW3C(p.date)}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
+    xml += `  <url><loc>${enUrl}</loc><lastmod>${toW3C(p.date)}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/><xhtml:link rel="alternate" hreflang="x-default" href="${enUrl}"/></url>\n`;
   });
 
   viPosts.forEach(p => {
     const viUrl = BASE_URL + "/vi/blog/" + p.slug;
     const enUrl = BASE_URL + "/blog/" + p.slug;
-    xml += `  <url><loc>${viUrl}</loc><lastmod>${toW3C(p.date)}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/></url>\n`;
+    xml += `  <url><loc>${viUrl}</loc><lastmod>${toW3C(p.date)}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority><xhtml:link rel="alternate" hreflang="en" href="${enUrl}"/><xhtml:link rel="alternate" hreflang="vi" href="${viUrl}"/><xhtml:link rel="alternate" hreflang="x-default" href="${enUrl}"/></url>\n`;
   });
 
   xml += "</urlset>";
@@ -414,7 +416,9 @@ app.get("/sitemap.xml", (req, res) => {
 });
 
 // Static files (after routes so routes take priority)
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), {
+  maxAge: process.env.STATIC_MAX_AGE || "6h",
+}));
 
 // ===================== API ROUTES =====================
 
